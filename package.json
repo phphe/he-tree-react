@@ -1,0 +1,48 @@
+{
+  "name": "he-tree-react",
+  "version": "0.0.1-beta",
+  "description": "A draggable sortable nested react tree component.",
+  "main": "dist/he-tree-react.cjs.js",
+  "module": "dist/he-tree-react.esm.js",
+  "files": [
+    "dist"
+  ],
+  "unpkg": "dist/he-tree-react.js",
+  "author": "phphe <phphe@outlook.com> (https://github.com/phphe)",
+  "homepage": "https://he-tree-react.phphe.com",
+  "bugs": {
+    "url": "https://github.com/phphe/he-tree-react/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/phphe/he-tree-react.git"
+  },
+  "scripts": {
+    "dev": "vue-cli-service serve",
+    "build:web": "vue-cli-service build",
+    "test:unit": "vue-cli-service test:unit",
+    "build": "node scripts/build.js",
+    "build:pro": "node scripts/build-pro.js"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.7.7",
+    "draggable-helper": "^4.0.0",
+    "helper-js": "^1.4.26",
+    "vue-functions": "^2.0.1",
+    "vue-runtime-helpers": "^1.1.2"
+  },
+  "devDependencies": {
+    "@vue/cli-plugin-babel": "^4.1.0",
+    "@vue/cli-service": "^4.1.0",
+    "bili": "^4.8.1",
+    "minimist": "^1.2.0",
+    "pug": "^2.0.4",
+    "pug-plain-loader": "^1.0.0",
+    "rollup-plugin-vue": "5.1.1",
+    "sass": "^1.23.7",
+    "sass-loader": "^8.0.0",
+    "vue": "^2.6.10",
+    "vue-template-compiler": "^2.6.10"
+  },
+  "license": "MIT"
+}
