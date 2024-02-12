@@ -3,7 +3,7 @@ import React, {
   useMemo, useRef, ReactNode, useLayoutEffect, useImperativeHandle
 } from 'react';
 
-type OptionalKeys<T> = {
+export type OptionalKeys<T> = {
   [K in keyof T]?: T[K];
 };
 // fix forwardRef type for generic types. refer: https://stackoverflow.com/questions/58469229/react-with-typescript-generics-while-using-react-forwardref
