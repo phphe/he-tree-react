@@ -15,7 +15,7 @@ export const defaultProps = {
   childrenKey: 'children',
   openKey: 'open',
   checkedKey: 'checked',
-  foldable: true,
+  foldable: false,
   indent: 20,
 }
 
@@ -27,6 +27,8 @@ export type TreeNodeInfo = {
   children: Record<string, unknown>[],
   level: number,
   dragOvering: boolean,
+  setOpen: (open: boolean) => void,
+  setChecked: (checked: boolean | null) => void,
   _attrs: {
     key: string | number,
     draggable: boolean,
@@ -48,6 +50,7 @@ export const HeTree = function HeTree(props: HeTreeProps) {
   const CHECKED = props.checkedKey!
   const indent = props.indent!
   const [forceRerender, setforceRerender] = useState([]); // change value to force rerender
+  const [mainCacheSeed, setmainCacheSeed] = useState([]); // set to trigger refresh main cache
   const [placeholderArgs, setplaceholderArgs] = useState<{
     _isPlaceholder: boolean,
     key: string,
@@ -57,7 +60,6 @@ export const HeTree = function HeTree(props: HeTreeProps) {
     level: number,
     index: number,
   } | null>();
-  const [placeholderExtraInfo, setplaceholderExtraInfo] = useState(); // different with normal node\
   const virtualList = useRef<VirtualListHandle>(null);
   // flat treeData and info
   // info.children does not include placeholder
@@ -80,15 +82,10 @@ export const HeTree = function HeTree(props: HeTreeProps) {
       const onDragStart = (e: DragEvent) => {
         e.dataTransfer!.setData("text", "he-tree"); // set data to work in Chrome Android
         e.dataTransfer!.dropEffect = 'move'
-        // TOFO node's 'dragging'
+        // TODO node's 'dragging'
       }
       // main events for drop area
       const onDragOver = (e: DragEvent) => {
-        // TODO
-        // if (!info.dragOvering) {
-        //   return
-        // }
-
         let closest: TreeNodeInfo = info
         let index = flatInfos.indexOf(info) // index of closest node
         let atTop = false
@@ -103,8 +100,9 @@ export const HeTree = function HeTree(props: HeTreeProps) {
           index = i
         }
         const listRoot = virtualList.current!.getRootElement()
-        let nodeBoxX = listRoot.getBoundingClientRect().x // TODO, minus padding left
-        let placeholderLevel = Math.ceil((e.pageX - nodeBoxX) / indent) // use this number to detect placeholder position. >= 0: prepend. < 0: after.}
+        // node start position
+        const nodeX = getInnerX(listRoot, false)
+        let placeholderLevel = Math.ceil((e.pageX - nodeX) / indent) // use this number to detect placeholder position. >= 0: prepend. < 0: after.}
         placeholderLevel = hp.between(placeholderLevel, 0, closest.level + 1)
         // @ts-ignore
         if (!atTop && !info._isPlaceholder && closest.node === props.treeData[CHILDREN][0]) {
@@ -129,13 +127,6 @@ export const HeTree = function HeTree(props: HeTreeProps) {
         const isDroppable = (info: TreeNodeInfo) => {
           // TODO
           return true
-        }
-        const getNextNodeInfo = (indexInTree: number) => {
-          let next = flatInfos[indexInTree + 1]
-          if (next?._isPlaceholder) {
-            next = flatInfos[indexInTree + 2]
-          }
-          return next
         }
         if (atTop) {
           Object.assign(newPlaceholderArgs, {
@@ -198,6 +189,34 @@ export const HeTree = function HeTree(props: HeTreeProps) {
         info.dragOvering = false
         setforceRerender([])
       }
+      const setOpen = (open: boolean) => {
+        node[OPEN] = open
+        setmainCacheSeed([])
+      }
+      const setChecked = (checked: boolean) => {
+        node[CHECKED] = checked
+        if (node[CHILDREN]) {
+          for (const { node: child } of traverseTreeChildren(node[CHILDREN], CHILDREN)) {
+            // @ts-ignore
+            child[CHECKED] = checked
+          }
+        }
+        for (const parent of traverseSelfAndParents(info.parent, 'parent')) {
+          // @ts-ignore
+          let allChecked = true
+          let hasChecked = false
+          // @ts-ignore
+          parent[CHILDREN].forEach(v => {
+            if (v[CHECKED]) {
+              hasChecked = true
+            } else {
+              allChecked = false
+            }
+          })
+          parent[CHECKED] = allChecked ? true : (hasChecked ? null : false)
+        }
+        setmainCacheSeed([])
+      }
       const _attrs: TreeNodeInfo['_attrs'] = {
         key, style, draggable: true,
         // @ts-ignore
@@ -208,7 +227,7 @@ export const HeTree = function HeTree(props: HeTreeProps) {
       if (_isPlaceholder) {
         _attrs['drag-placeholder'] = 'true'
       }
-      const info = { _isPlaceholder, key, node, parent, children, level, dragOvering: false, _attrs, ...others }
+      const info = { _isPlaceholder, key, node, parent, children, level, dragOvering: false, setOpen, setChecked, _attrs, ...others }
       return info
     }
 
@@ -216,24 +235,26 @@ export const HeTree = function HeTree(props: HeTreeProps) {
     const infoByNodeMap = new Map()
     hp.walkTreeData(
       props.treeData,
-      (node, index, parent, path) => {
+      (node: any, index, parent, path) => {
         // @ts-ignore
         const key: string = node.id || node.key
-        const indexInTree = count
         // @ts-ignore
         const children = [];
+        const isRoot = count === -1
         // @ts-ignore
         const info: TreeNodeInfo = resolveNode({ key, node, parent, children, level: path.length })
         infoByNodeMap.set(node, info)
-        if (count === -1) {
+        if (isRoot) {
           // root
-          // TODO
         } else {
           const parentInfo = infoByNodeMap.get(parent)
           parentInfo.children.push(info)
           flat.push(info)
         }
         count++
+        if (!isRoot && props.foldable && !node[OPEN]) {
+          return 'skip children'
+        }
       },
       { childrenKey: CHILDREN }
     );
@@ -243,7 +264,7 @@ export const HeTree = function HeTree(props: HeTreeProps) {
       flat.splice(placeholderArgs.index, 0, placeholderInfo)
     }
     return { flatInfos: flat, infoByNodeMap }
-  }, [props.treeData, props.indent, props.foldable, CHILDREN, OPEN, CHECKED, placeholderArgs?.parent, placeholderArgs?.index]);
+  }, [mainCacheSeed, props.treeData, indent, props.foldable, CHILDREN, OPEN, CHECKED, placeholderArgs?.parent, placeholderArgs?.index]);
   const renderPlaceholder = (info: TreeNodeInfo) => {
     return <div className="tree-drag-placeholder" ></div>
   }
@@ -257,3 +278,39 @@ export const HeTree = function HeTree(props: HeTreeProps) {
 }
 
 HeTree.defaultProps = defaultProps
+
+function getInnerX(el: HTMLElement, rightDirection = false) {
+  let rect = el.getBoundingClientRect()
+  let css = window.getComputedStyle(el)
+  let padding = parseFloat(css[!rightDirection ? 'paddingLeft' : 'paddingRight'])
+  if (!rightDirection) {
+    return rect.x + padding
+  } else {
+    return rect.x + rect.width - padding
+  }
+}
+
+// : Generator<{node:T, parent: T|null}>
+export function* traverseTreeNode<T>(node: T, childrenKey = 'children', parent: T | null = null): Generator<{ node: T, parent: T | null }> {
+  yield { node, parent }
+  // @ts-ignore
+  const children: T[] = node[childrenKey]
+  if (children?.length > 0) {
+    yield* traverseTreeChildren(children, childrenKey, node)
+  }
+}
+
+export function* traverseTreeChildren<T>(children: T[], childrenKey = 'children', parent: T | null = null): Generator<{ node: T, parent: T | null }> {
+  for (const node of children) {
+    yield* traverseTreeNode(node, childrenKey, parent)
+  }
+}
+
+export function* traverseSelfAndParents<T>(node: T | null | undefined, parentKey = 'parent') {
+  let cur = node
+  while (cur) {
+    yield cur
+    // @ts-ignore
+    cur = cur[parentKey]
+  }
+}
