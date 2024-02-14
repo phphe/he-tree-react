@@ -6,7 +6,7 @@ function App() {
       <button draggable={draggable} onDragStart={onDragStart}>x</button>
       <button onClick={() => setOpen(!node.open)}>{node.open ? '-' : '+'}</button>
       <input type="checkbox" checked={node.checked} onChange={(e) => setChecked(e.target.checked)} />
-      {node.text}
+      {node.text}{node.open + ''}
     </div>
   </div>
   return (
