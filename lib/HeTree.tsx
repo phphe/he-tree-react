@@ -3,9 +3,13 @@ import { useEffect, useMemo, useState, useRef, ReactNode, DragEventHandler } fro
 import * as hp from "helper-js";
 import { VirtualList, VirtualListHandle, OptionalKeys } from "./VirtualList";
 
+type RecordStringUnknown = Record<string, unknown>
+
 export type HeTreeProps = {
-  treeData: Record<string, unknown>,
+  treeData: RecordStringUnknown,
   renderNode: (info: TreeNodeInfo) => ReactNode,
+  isNodeDraggable?: (node: RecordStringUnknown) => boolean | undefined
+  isNodeDroppable?: (node: RecordStringUnknown, draggedNode: RecordStringUnknown | undefined) => boolean | undefined
 } & OptionalKeys<typeof defaultProps>
 
 export const defaultProps = {
@@ -17,18 +21,21 @@ export const defaultProps = {
   checkedKey: 'checked',
   foldable: false,
   indent: 20,
+  customDragTrigger: false,
 }
 
 export type TreeNodeInfo = {
   _isPlaceholder: boolean,
   key: string | number,
-  node: Record<string, unknown>,
-  parent: Record<string, unknown>,
-  children: Record<string, unknown>[],
+  node: RecordStringUnknown,
+  parent: RecordStringUnknown,
+  children: RecordStringUnknown[],
   level: number,
   dragOvering: boolean,
+  draggable: boolean,
   setOpen: (open: boolean) => void,
   setChecked: (checked: boolean | null) => void,
+  onDragStart: DragEventHandler,
   _attrs: {
     key: string | number,
     draggable: boolean,
@@ -42,21 +49,22 @@ export type TreeNodeInfo = {
     'data-level': number,
     'drag-placeholder'?: 'true'
   }
-} & Record<string, unknown>
+} & RecordStringUnknown
 
 export const HeTree = function HeTree(props: HeTreeProps) {
   const CHILDREN = props.childrenKey!
   const OPEN = props.openKey!
   const CHECKED = props.checkedKey!
   const indent = props.indent!
+  const draggedNode = useRef<RecordStringUnknown>();
   const [forceRerender, setforceRerender] = useState([]); // change value to force rerender
   const [mainCacheSeed, setmainCacheSeed] = useState([]); // set to trigger refresh main cache
   const [placeholderArgs, setplaceholderArgs] = useState<{
     _isPlaceholder: boolean,
     key: string,
-    node: Record<string, unknown>,
-    parent: Record<string, unknown>,
-    children: Record<string, unknown>[],
+    node: RecordStringUnknown,
+    parent: RecordStringUnknown,
+    children: RecordStringUnknown[],
     level: number,
     index: number,
   } | null>();
@@ -69,11 +77,11 @@ export const HeTree = function HeTree(props: HeTreeProps) {
       { _isPlaceholder, key, node, parent, children, level, ...others }: {
         _isPlaceholder: boolean,
         key: string | number,
-        node: Record<string, unknown>,
-        parent: Record<string, unknown>,
-        children: Record<string, unknown>[], level: number,
-      } & Record<string, unknown>
-    ) => {
+        node: RecordStringUnknown,
+        parent: RecordStringUnknown,
+        children: RecordStringUnknown[], level: number,
+      } & RecordStringUnknown
+    ): TreeNodeInfo => {
       _isPlaceholder = Boolean(_isPlaceholder)
       if (key == null) {
         key = Math.random()
@@ -82,7 +90,7 @@ export const HeTree = function HeTree(props: HeTreeProps) {
       const onDragStart = (e: DragEvent) => {
         e.dataTransfer!.setData("text", "he-tree"); // set data to work in Chrome Android
         e.dataTransfer!.dropEffect = 'move'
-        // TODO node's 'dragging'
+        draggedNode.current = node;
       }
       // main events for drop area
       const onDragOver = (e: DragEvent) => {
@@ -125,8 +133,7 @@ export const HeTree = function HeTree(props: HeTreeProps) {
           index: index + 1,
         }
         const isDroppable = (info: TreeNodeInfo) => {
-          // TODO
-          return true
+          return getDroppable(info.node)
         }
         if (atTop) {
           Object.assign(newPlaceholderArgs, {
@@ -151,7 +158,7 @@ export const HeTree = function HeTree(props: HeTreeProps) {
                 parentInfo: cur,
               })
             }
-            cur = infoByNodeMap.get(cur.parent)
+            cur = infoByNodeMap.get(cur.parent)!
           }
           let placeholderLevelPosition = hp.arrayLast(availablePositionsLeft)
           if (!placeholderLevelPosition) {
@@ -193,9 +200,10 @@ export const HeTree = function HeTree(props: HeTreeProps) {
         node[OPEN] = open
         setmainCacheSeed([])
       }
-      const setChecked = (checked: boolean) => {
+      const setChecked = (checked: boolean | null) => {
         node[CHECKED] = checked
         if (node[CHILDREN]) {
+          // @ts-ignore
           for (const { node: child } of traverseTreeChildren(node[CHILDREN], CHILDREN)) {
             // @ts-ignore
             child[CHECKED] = checked
@@ -217,8 +225,9 @@ export const HeTree = function HeTree(props: HeTreeProps) {
         }
         setmainCacheSeed([])
       }
+      const draggable = _isPlaceholder ? false : getDraggable(node, parent)
       const _attrs: TreeNodeInfo['_attrs'] = {
-        key, style, draggable: true,
+        key, style, draggable: props.customDragTrigger ? false : draggable,
         // @ts-ignore
         onDragStart, onDragOver, onDrop, onDragEnter, onDragLeave,
         // data attrs
@@ -227,12 +236,16 @@ export const HeTree = function HeTree(props: HeTreeProps) {
       if (_isPlaceholder) {
         _attrs['drag-placeholder'] = 'true'
       }
-      const info = { _isPlaceholder, key, node, parent, children, level, dragOvering: false, setOpen, setChecked, _attrs, ...others }
+      const info: TreeNodeInfo = {
+        _isPlaceholder, key, node, parent, children, level, dragOvering: false, draggable, setOpen, setChecked, _attrs, ...others,
+        // @ts-ignore
+        onDragStart,
+      }
       return info
     }
 
     let count = -1
-    const infoByNodeMap = new Map()
+    const infoByNodeMap = new Map<RecordStringUnknown, TreeNodeInfo>()
     hp.walkTreeData(
       props.treeData,
       (node: any, index, parent, path) => {
@@ -247,14 +260,11 @@ export const HeTree = function HeTree(props: HeTreeProps) {
         if (isRoot) {
           // root
         } else {
-          const parentInfo = infoByNodeMap.get(parent)
+          const parentInfo = infoByNodeMap.get(parent)!
           parentInfo.children.push(info)
           flat.push(info)
         }
         count++
-        if (!isRoot && props.foldable && !node[OPEN]) {
-          return 'skip children'
-        }
       },
       { childrenKey: CHILDREN }
     );
@@ -264,11 +274,59 @@ export const HeTree = function HeTree(props: HeTreeProps) {
       flat.splice(placeholderArgs.index, 0, placeholderInfo)
     }
     return { flatInfos: flat, infoByNodeMap }
-  }, [mainCacheSeed, props.treeData, indent, props.foldable, CHILDREN, OPEN, CHECKED, placeholderArgs?.parent, placeholderArgs?.index]);
+    // 
+    function getDraggable(node: RecordStringUnknown, parent: RecordStringUnknown | undefined): boolean {
+      let draggable = infoByNodeMap.get(node)?.draggable
+      if (draggable == undefined) {
+        draggable = props.isNodeDraggable?.(node)
+      }
+      if (draggable == undefined) {
+        if (parent) {
+          const parentInfo = infoByNodeMap.get(parent)!
+          draggable = getDraggable(parent, parentInfo.parent)
+        } else {
+          draggable = true
+        }
+      }
+      return draggable
+    }
+    function getDroppable(node: RecordStringUnknown): boolean {
+      let droppable = props.isNodeDroppable?.(node, draggedNode.current)
+      if (droppable == undefined) {
+        const parent = infoByNodeMap.get(node)?.parent
+        if (parent) {
+          droppable = getDroppable(parent)
+        } else {
+          droppable = true
+        }
+      }
+      return droppable
+    }
+  }, [mainCacheSeed, placeholderArgs?.parent, placeholderArgs?.index,
+    // props
+    props.treeData, props.isNodeDraggable, props.isNodeDroppable, CHILDREN, OPEN, CHECKED, props.foldable, indent, props.customDragTrigger,
+  ]);
+  const visibleNodeInfos = useMemo(() => {
+    let closed = new Set()
+    if (!props.foldable) {
+      return flatInfos
+    } else {
+      return flatInfos.filter(info => {
+        let hidden = false
+        if (closed.has(info.parent)) {
+          closed.add(info.node)
+          hidden = true
+        } else if (!info.node[OPEN]) {
+          closed.add(info.node)
+        }
+        return !hidden
+      })
+    }
+  }, [flatInfos, props.foldable, OPEN])
   const renderPlaceholder = (info: TreeNodeInfo) => {
     return <div className="tree-drag-placeholder" ></div>
   }
-  return <VirtualList ref={virtualList} items={flatInfos} virtual={false}
+  return <VirtualList ref={virtualList} items={visibleNodeInfos} virtual={false}
     renderItem={(info, index) => (
       <div className="tree-node-box" {...info._attrs} >
         {!info._isPlaceholder ? props.renderNode(info) : renderPlaceholder(info)}
