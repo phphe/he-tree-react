@@ -73,6 +73,7 @@ export const _useTreeData = (
       isNodeDraggable?: HeTreeProps['isNodeDraggable'],
     }
 ) => {
+
   const [refreshSeed, setrefreshSeed] = useState([]);
   const { flatInfos, infoByNodeMap } = useMemo(() => {
     const flat: TreeNodeInfo[] = [];
@@ -337,7 +338,12 @@ export const _useDraggable = ({
       return droppable
     }
     return { visibleInfos }
-  }, [useTreeDataReturn, treeData, foldable, OPEN, CHILDREN, indent, customDragTrigger, isNodeDroppable,])
+  }, [
+    // watch placeholder position
+    placeholderInfo?.parent, placeholderInfo?._indexInVisible,
+    // watch arguments
+    useTreeDataReturn.flatInfos, useTreeDataReturn.infoByNodeMap, treeData, foldable, OPEN, CHILDREN, indent, customDragTrigger, isNodeDroppable,
+  ])
   return { draggedNode, dragOverNode, visibleInfos, virtualList }
 }
 
