@@ -11,7 +11,8 @@ export type HeTreeProps = {
   keyKey?: string
   isNodeDraggable?: (node: RecordStringUnknown) => boolean | undefined
   isNodeDroppable?: (node: RecordStringUnknown, draggedNode: RecordStringUnknown | undefined) => boolean | undefined
-  afterDragOpen?: (node: RecordStringUnknown) => void,
+  customDragImage?: (e: React.DragEvent<HTMLElement>, node: RecordStringUnknown) => void,
+  afterDragStart?: (e: React.DragEvent<HTMLElement>, node: RecordStringUnknown) => void,
 } & OptionalKeys<typeof defaultProps>
 
 export const defaultProps = {
@@ -167,12 +168,17 @@ export const _useDraggable = (props: { useTreeDataReturn: ReturnType<typeof _use
   const { flatInfos, infoByNodeMap } = props.useTreeDataReturn
   const indent = props.indent!
   const [draggedNode, setdraggedNode] = useState<RecordStringUnknown>();
+  const [draggedNodeStyle, setdraggedNodeStyle] = useState<React.CSSProperties>();
   const [dragOverNode, setdragOverNode] = useState<RecordStringUnknown>();
   const virtualList = useRef<VirtualListHandle>(null);
   const [placeholderInfo, setplaceholderInfo] = useState<(TreeNodeInfo & { _indexInVisible: number }) | null>();
   const { visibleInfos } = useMemo(() => {
     const visibleInfos: TreeNodeInfo[] = [];
     for (const { node, parent, skipChildren } of traverseTreeChildren(props.treeData[CHILDREN] as RecordStringUnknown[], CHILDREN, props.treeData)) {
+      if (node === draggedNode) {
+        skipChildren()
+        continue
+      }
       const info = infoByNodeMap.get(node)!
       completeInfo(info)
       visibleInfos.push(info)
@@ -190,9 +196,28 @@ export const _useDraggable = (props: { useTreeDataReturn: ReturnType<typeof _use
         e.dataTransfer!.setData("text", "he-tree"); // set data to work in Chrome Android
         // TODO 拖拽类型识别
         e.dataTransfer!.dropEffect = 'move'
+        if (props.customDragImage) {
+          props.customDragImage(e, info.node)
+        } else {
+          // setDragImage
+          let cur = e.target as HTMLElement
+          const nodeBox = hp.findParent(cur, (el) => hp.hasClass(el, 'tree-node-box'), { withSelf: true })
+          const node = nodeBox.children[0]
+          e.dataTransfer.setDragImage(node, 0, 0);
+        }
+        props.afterDragStart?.(e, info.node)
         setdraggedNode(info.node);
+        // setdraggedNodeStyle({
+        //   position: 'fixed',
+        //   top: '0',
+        //   left: '0',
+        //   minWidth: '200px',
+        // })
       }
       const style = { paddingLeft: (info.level - 1) * indent + 'px' }
+      if (info.node === draggedNode && draggedNodeStyle) {
+        Object.assign(style, draggedNodeStyle)
+      }
       Object.assign(info, {
         onDragStart,
         attrs: {
@@ -356,7 +381,7 @@ export const _useDraggable = (props: { useTreeDataReturn: ReturnType<typeof _use
     // watch placeholder position
     placeholderInfo?.parent, placeholderInfo?._indexInVisible,
     // watch arguments
-    props.useTreeDataReturn.flatInfos, props.useTreeDataReturn.infoByNodeMap, props.treeData, props.foldable, OPEN, CHILDREN, indent, props.customDragTrigger, props.isNodeDroppable,
+    props.useTreeDataReturn.flatInfos, props.useTreeDataReturn.infoByNodeMap, props.treeData, props.foldable, OPEN, CHILDREN, indent, props.customDragTrigger, props.isNodeDroppable, props.customDragImage, props.afterDragStart,
   ])
   return { draggedNode, dragOverNode, visibleInfos, virtualList }
 }
@@ -379,6 +404,9 @@ export const HeTree = function HeTree(props: HeTreeProps) {
   // 
   const renderPlaceholder = (info: TreeNodeInfo) => {
     return <div className="tree-drag-placeholder" ></div>
+  }
+  const renderFoot = () => {
+
   }
   // 
   return <VirtualList ref={virtualList} items={visibleInfos} virtual={false}
