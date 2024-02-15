@@ -1,5 +1,5 @@
 import "./HeTree.css";
-import React, { useEffect, useMemo, useState, useRef, ReactNode, Key } from "react";
+import React, { useEffect, useMemo, useState, useRef, ReactNode, useCallback } from "react";
 import * as hp from "helper-js";
 import { VirtualList, VirtualListHandle, OptionalKeys } from "./VirtualList";
 
@@ -168,11 +168,10 @@ export const _useDraggable = (props: { useTreeDataReturn: ReturnType<typeof _use
   const { flatInfos, infoByNodeMap } = props.useTreeDataReturn
   const indent = props.indent!
   const [draggedNode, setdraggedNode] = useState<RecordStringUnknown>();
-  const [draggedNodeStyle, setdraggedNodeStyle] = useState<React.CSSProperties>();
   const [dragOverNode, setdragOverNode] = useState<RecordStringUnknown>();
   const virtualList = useRef<VirtualListHandle>(null);
   const [placeholderInfo, setplaceholderInfo] = useState<(TreeNodeInfo & { _indexInVisible: number }) | null>();
-  const { visibleInfos } = useMemo(() => {
+  const mainCache = useMemo(() => {
     const visibleInfos: TreeNodeInfo[] = [];
     for (const { node, parent, skipChildren } of traverseTreeChildren(props.treeData[CHILDREN] as RecordStringUnknown[], CHILDREN, props.treeData)) {
       if (node === draggedNode) {
@@ -191,6 +190,27 @@ export const _useDraggable = (props: { useTreeDataReturn: ReturnType<typeof _use
       completeInfo(placeholderInfo)
       visibleInfos.splice(placeholderInfo._indexInVisible, 0, placeholderInfo)
     }
+    const onDragOverRoot: React.DragEventHandler<HTMLElement> = (e) => {
+      // @ts-ignore
+      if (e._handledByNode) {
+        return
+      }
+      // ignore if has visible tree node
+      if (visibleInfos.find(info => !info.isPlaceholder)) {
+        return
+      }
+      if (getDroppable(props.treeData)) {
+        const newPlaceholderInfo = createPlaceholderInfo()
+        Object.assign(newPlaceholderInfo, {
+          parent: props.treeData,
+          level: 1,
+          _indexInVisible: 0,
+        })
+        // @ts-ignore
+        setplaceholderInfo(newPlaceholderInfo)
+        e.preventDefault();
+      }
+    }
     function completeInfo(info: TreeNodeInfo) {
       const onDragStart: TreeNodeInfo['onDragStart'] = (e) => {
         e.dataTransfer!.setData("text", "he-tree"); // set data to work in Chrome Android
@@ -207,17 +227,8 @@ export const _useDraggable = (props: { useTreeDataReturn: ReturnType<typeof _use
         }
         props.afterDragStart?.(e, info.node)
         setdraggedNode(info.node);
-        // setdraggedNodeStyle({
-        //   position: 'fixed',
-        //   top: '0',
-        //   left: '0',
-        //   minWidth: '200px',
-        // })
       }
       const style = { paddingLeft: (info.level - 1) * indent + 'px' }
-      if (info.node === draggedNode && draggedNodeStyle) {
-        Object.assign(style, draggedNodeStyle)
-      }
       Object.assign(info, {
         onDragStart,
         attrs: {
@@ -226,6 +237,8 @@ export const _useDraggable = (props: { useTreeDataReturn: ReturnType<typeof _use
           style,
           onDragStart,
           onDragOver(e) {
+            // @ts-ignore
+            e._handledByNode = true // make root ignore this event
             // dragOpen ========================
             const shouldDragOpen = () => {
               const { node } = info
@@ -272,7 +285,7 @@ export const _useDraggable = (props: { useTreeDataReturn: ReturnType<typeof _use
             // node start position
             const nodeX = getInnerX(listRoot, false)
             let placeholderLevel = Math.ceil((e.pageX - nodeX) / indent) // use this number to detect placeholder position. >= 0: prepend. < 0: after.}
-            placeholderLevel = hp.between(placeholderLevel, 0, closest.level + 1)
+            placeholderLevel = hp.between(placeholderLevel, 0, (closest?.level || 0) + 1)
             // @ts-ignore
             if (!atTop && !info.isPlaceholder && closest.node === props.treeData[CHILDREN][0]) {
               // chekc if at top
@@ -284,18 +297,7 @@ export const _useDraggable = (props: { useTreeDataReturn: ReturnType<typeof _use
               placeholderLevel = 0
             }
             //
-            let newPlaceholderInfo = {
-              isPlaceholder: true,
-              key: '__DRAG_PLACEHOLDER__',
-              node: {},
-              children: [],
-              parent: info.parent,
-              level: 0,
-              _indexInVisible: 0,
-            }
-            const isDroppable = (info: TreeNodeInfo) => {
-              return getDroppable(info.node)
-            }
+            let newPlaceholderInfo = createPlaceholderInfo()
             if (atTop) {
               Object.assign(newPlaceholderInfo, {
                 parent: props.treeData,
@@ -313,7 +315,7 @@ export const _useDraggable = (props: { useTreeDataReturn: ReturnType<typeof _use
               const availablePositionsRight: typeof availablePositionsLeft = [];
               let cur = closest
               while (cur && cur.level >= parentMinLevel) {
-                if (isDroppable(cur)) {
+                if (getDroppable(cur.node)) {
                   (placeholderLevel > cur.level ? availablePositionsLeft : availablePositionsRight).unshift({
                     parentInfo: cur,
                   })
@@ -376,14 +378,25 @@ export const _useDraggable = (props: { useTreeDataReturn: ReturnType<typeof _use
       }
       return droppable
     }
-    return { visibleInfos }
+    function createPlaceholderInfo() {
+      return {
+        isPlaceholder: true,
+        key: '__DRAG_PLACEHOLDER__',
+        node: {},
+        children: [],
+        parent: null,
+        level: 0,
+        _indexInVisible: 0,
+      }
+    }
+    return { visibleInfos, onDragOverRoot }
   }, [
     // watch placeholder position
     placeholderInfo?.parent, placeholderInfo?._indexInVisible,
     // watch arguments
     props.useTreeDataReturn.flatInfos, props.useTreeDataReturn.infoByNodeMap, props.treeData, props.foldable, OPEN, CHILDREN, indent, props.customDragTrigger, props.isNodeDroppable, props.customDragImage, props.afterDragStart,
   ])
-  return { draggedNode, dragOverNode, visibleInfos, virtualList }
+  return { draggedNode, dragOverNode, virtualList, ...mainCache }
 }
 
 export const HeTree = function HeTree(props: HeTreeProps) {
@@ -400,22 +413,23 @@ export const HeTree = function HeTree(props: HeTreeProps) {
   // info.children does not include placeholder
   const useTreeDataReturn = _useTreeData({ ...keys, ...props })
   const { flatInfos, infoByNodeMap } = useTreeDataReturn
-  const { draggedNode, dragOverNode, visibleInfos, virtualList } = _useDraggable({ useTreeDataReturn, ...keys, ...props })
+  const { draggedNode, dragOverNode, virtualList, visibleInfos, onDragOverRoot } = _useDraggable({ useTreeDataReturn, ...keys, ...props })
   // 
   const renderPlaceholder = (info: TreeNodeInfo) => {
     return <div className="tree-drag-placeholder" ></div>
   }
-  const renderFoot = () => {
-
-  }
   // 
-  return <VirtualList ref={virtualList} items={visibleInfos} virtual={false}
-    renderItem={(info, index) => (
-      <div className="tree-node-box" {...info.attrs} >
-        {!info.isPlaceholder ? props.renderNode(info) : renderPlaceholder(info)}
-      </div>
-    )}
-  />
+  return (
+    <div className="he-tree" onDragOver={onDragOverRoot}>
+      <VirtualList ref={virtualList} items={visibleInfos} virtual={false}
+        renderItem={(info, index) => (
+          <div className="tree-node-box" {...info.attrs} >
+            {!info.isPlaceholder ? props.renderNode(info) : renderPlaceholder(info)}
+          </div>
+        )}
+      />
+    </div>
+  )
 }
 
 HeTree.defaultProps = defaultProps
