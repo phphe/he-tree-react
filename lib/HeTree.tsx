@@ -13,6 +13,7 @@ export type HeTreeProps = {
   isNodeDroppable?: (node: RecordStringUnknown, draggedNode: RecordStringUnknown | undefined, index?: number) => boolean | undefined
   customDragImage?: (e: React.DragEvent<HTMLElement>, node: RecordStringUnknown) => void,
   onDragStart?: (e: React.DragEvent<HTMLElement>, node: RecordStringUnknown) => void,
+  onDragOver?: (e: React.DragEvent<HTMLElement>, node: RecordStringUnknown) => void,
   onExternalDrag?: (e: React.DragEvent<HTMLElement>) => boolean | undefined,
   onExternalDrop?: (e: React.DragEvent<HTMLElement>, parent: RecordStringUnknown, index: number) => void,
   onChange?: (treeData: RecordStringUnknown) => void,
@@ -185,13 +186,17 @@ export const _useDraggable = (props: { useTreeDataReturn: ReturnType<typeof _use
       completeInfo(placeholderInfo)
       visibleInfos.splice(placeholderInfo._indexInVisible, 0, placeholderInfo)
     }
+    const isInnerDrag = () => draggedNode != null
     const onDragOverRoot: React.DragEventHandler<HTMLElement> = (e) => {
       // @ts-ignore
       if (e._handledByNode) {
         return
       }
       // ignore if has visible tree node
-      if (visibleInfos.find(info => !info.isPlaceholder)) {
+      if (visibleInfos.length > 0) {
+        return
+      }
+      if (!isInnerDrag() && !props.onExternalDrag?.(e)) {
         return
       }
       if (getDroppable(props.treeData, 0)) {
@@ -220,7 +225,6 @@ export const _useDraggable = (props: { useTreeDataReturn: ReturnType<typeof _use
           const node = nodeBox.children[0]
           e.dataTransfer.setDragImage(node, 0, 0);
         }
-        props.onDragStart?.(e, info.node)
         setdraggedNode(info.node);
         setTimeout(() => {
           setdraggedNodeDelayed(info.node);
@@ -234,7 +238,8 @@ export const _useDraggable = (props: { useTreeDataReturn: ReturnType<typeof _use
           // @ts-ignore
           setplaceholderInfo(newPlaceholderInfo)
         }, 0)
-        // listen dragend
+        props.onDragStart?.(e, info.node)
+        // listen dragend. dragend only trigger in dragstart window
         const onDragEnd = (e: DragEvent) => {
           window.removeEventListener('dragend', onDragEnd);
         }
@@ -252,7 +257,6 @@ export const _useDraggable = (props: { useTreeDataReturn: ReturnType<typeof _use
           visibility: 'hidden',
         } as React.CSSProperties)
       }
-      const isInnerDrag = () => draggedNode != null
       Object.assign(info, {
         onDragStart,
         attrs: {
@@ -364,6 +368,7 @@ export const _useDraggable = (props: { useTreeDataReturn: ReturnType<typeof _use
               e.preventDefault(); // call mean droppable
             }
             setdragOverNode(info.node)
+            props.onDragOver?.(e, info.node)
           },
           onDrop(e) {
             e.preventDefault();
@@ -460,7 +465,7 @@ export const _useDraggable = (props: { useTreeDataReturn: ReturnType<typeof _use
     // watch placeholder position
     placeholderInfo?.parent, placeholderInfo?._indexInVisible,
     // watch props
-    props.useTreeDataReturn.flatInfos, props.useTreeDataReturn.infoByNodeMap, props.treeData, props.foldable, OPEN, CHILDREN, indent, props.customDragTrigger, props.isNodeDroppable, props.customDragImage, props.onDragStart, props.onExternalDrag, props.onExternalDrop, props.onChange,
+    props.useTreeDataReturn.flatInfos, props.useTreeDataReturn.infoByNodeMap, props.treeData, props.foldable, OPEN, CHILDREN, indent, props.customDragTrigger, props.isNodeDroppable, props.customDragImage, props.onDragStart, props.onDragOver, props.onExternalDrag, props.onExternalDrop, props.onChange,
   ])
   const persistentIndices = useMemo(() => draggedNode ? [mainCache.visibleInfos.indexOf(infoByNodeMap.get(draggedNode)!)] : [], [draggedNode, mainCache.visibleInfos, infoByNodeMap]);
   return { draggedNode, dragOverNode, virtualList, persistentIndices, ...mainCache }
