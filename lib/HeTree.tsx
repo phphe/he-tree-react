@@ -10,7 +10,7 @@ export type HeTreeProps = {
   renderNode: (info: TreeNodeInfo) => ReactNode,
   keyKey?: string
   isNodeDraggable?: (node: RecordStringUnknown) => boolean | undefined
-  isNodeDroppable?: (node: RecordStringUnknown, draggedNode: RecordStringUnknown | undefined) => boolean | undefined
+  isNodeDroppable?: (node: RecordStringUnknown, draggedNode: RecordStringUnknown | undefined, index?: number) => boolean | undefined
   customDragImage?: (e: React.DragEvent<HTMLElement>, node: RecordStringUnknown) => void,
   onDragStart?: (e: React.DragEvent<HTMLElement>, node: RecordStringUnknown) => void,
   onExternalDrag?: (e: React.DragEvent<HTMLElement>) => boolean | undefined,
@@ -138,7 +138,7 @@ export const _useTreeData = (props: HeTreeProps & KEYS) => {
           // root
         } else {
           const parentInfo = infoByNodeMap.get(parent)!
-          parentInfo.children.push(info)
+          parentInfo.children.push(node)
         }
         flat.push(info)
       },
@@ -199,7 +199,7 @@ export const _useDraggable = (props: { useTreeDataReturn: ReturnType<typeof _use
       if (visibleInfos.find(info => !info.isPlaceholder)) {
         return
       }
-      if (getDroppable(props.treeData)) {
+      if (getDroppable(props.treeData, 0)) {
         const newPlaceholderInfo = createPlaceholderInfo()
         Object.assign(newPlaceholderInfo, {
           parent: props.treeData,
@@ -233,6 +233,7 @@ export const _useDraggable = (props: { useTreeDataReturn: ReturnType<typeof _use
           Object.assign(newPlaceholderInfo, {
             parent: info.node,
             level: info.level,
+            // @ts-ignore
             _indexInVisible: info.parent[CHILDREN].indexOf(info.node) + 1,
           })
           // @ts-ignore
@@ -333,7 +334,9 @@ export const _useDraggable = (props: { useTreeDataReturn: ReturnType<typeof _use
               const availablePositionsRight: typeof availablePositionsLeft = [];
               let cur = closest
               while (cur && cur.level >= parentMinLevel) {
-                if (getDroppable(cur.node)) {
+                // @ts-ignore
+                const ti = cur._targetIndex = getTargetIndex(cur, next)
+                if (getDroppable(cur.node, ti)) {
                   (placeholderLevel > cur.level ? availablePositionsLeft : availablePositionsRight).unshift({
                     parentInfo: cur,
                   })
@@ -345,7 +348,7 @@ export const _useDraggable = (props: { useTreeDataReturn: ReturnType<typeof _use
                 placeholderLevelPosition = hp.arrayFirst(availablePositionsRight)
               }
               if (placeholderLevelPosition) {
-                let targetIndex = index + 1
+                let targetIndex = index + 1 // index in visible infos
                 let oldIndex = placeholderInfo?._indexInVisible
                 if (oldIndex != null && oldIndex < targetIndex) {
                   targetIndex--
@@ -389,12 +392,12 @@ export const _useDraggable = (props: { useTreeDataReturn: ReturnType<typeof _use
         delete info.attrs.draggable; delete info.attrs.onDragStart;
       }
     }
-    function getDroppable(node: RecordStringUnknown): boolean {
+    function getDroppable(node: RecordStringUnknown, index?: number): boolean {
       const isClose = props.foldable && node !== props.treeData && !node[OPEN]
       if (isClose) {
         return false
       }
-      let droppable = props.isNodeDroppable?.(node, draggedNode)
+      let droppable = props.isNodeDroppable?.(node, draggedNode, index)
       if (droppable == undefined) {
         const parent = infoByNodeMap.get(node)?.parent
         if (parent) {
@@ -445,6 +448,16 @@ export const _useDraggable = (props: { useTreeDataReturn: ReturnType<typeof _use
       // next
       const next = find(index, NEXT).cur
       return { closest, index, atTop, next }
+    }
+    /**
+     * calculate placeholder target index in target parent's children
+     */
+    function getTargetIndex(targetParentInfo: TreeNodeInfo, next: TreeNodeInfo | undefined) {
+      let index = targetParentInfo.children.length
+      if (next && next.parent === targetParentInfo.node) {
+        index = targetParentInfo.children.indexOf(next.node)
+      }
+      return index
     }
     return { visibleInfos, onDragOverRoot }
   }, [
