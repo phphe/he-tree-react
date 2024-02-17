@@ -124,26 +124,21 @@ export const _useTreeData = (props: HeTreeProps & KEYS) => {
     }
 
     const infoByNodeMap = new Map<RecordStringUnknown, TreeNodeInfo>()
-    hp.walkTreeData(
-      props.treeData,
-      (node: any, index, parent, path) => {
-        // @ts-ignore
-        const key: string = node[KEY]
-        // @ts-ignore
-        const children = [];
-        // @ts-ignore
-        const info: TreeNodeInfo = resolveNode({ key, node, parent, children, level: path.length })
-        infoByNodeMap.set(node, info)
-        if (!parent) {
-          // root
-        } else {
-          const parentInfo = infoByNodeMap.get(parent)!
-          parentInfo.children.push(node)
-        }
-        flat.push(info)
-      },
-      { childrenKey: CHILDREN }
-    );
+    for (const { node, parent, skipChildren } of traverseTreeNode(props.treeData, CHILDREN)) {
+      // @ts-ignore
+      const key: string = node[KEY]
+      // @ts-ignore
+      const children = [];
+      const parentInfo = parent && infoByNodeMap.get(parent)
+      const level = parentInfo ? parentInfo.level + 1 : 0
+      // @ts-ignore
+      const info: TreeNodeInfo = resolveNode({ key, node, parent, children, level })
+      infoByNodeMap.set(node, info)
+      if (parentInfo) {
+        parentInfo.children.push(node)
+      }
+      flat.push(info)
+    }
     // methods
     function getDraggable(node: RecordStringUnknown, parent: RecordStringUnknown | undefined): boolean {
       let draggable = infoByNodeMap.get(node)?.draggable
