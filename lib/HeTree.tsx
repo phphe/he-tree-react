@@ -1,22 +1,22 @@
 import "./HeTree.css";
-import React, { useEffect, useMemo, useState, useRef, ReactNode, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useRef, ReactNode, useCallback, useImperativeHandle } from "react";
 import * as hp from "helper-js";
-import { VirtualList, VirtualListHandle, OptionalKeys } from "./VirtualList";
+import { VirtualList, VirtualListHandle, OptionalKeys, FixedForwardRef } from "./VirtualList";
 
-type RecordStringUnknown = Record<string, unknown>
+const forwardRef = React.forwardRef as FixedForwardRef
 
-export type HeTreeProps = {
-  treeData: RecordStringUnknown,
-  renderNode: (info: TreeNodeInfo) => ReactNode,
+export type HeTreeProps<T extends Record<string, unknown>,> = {
+  treeData: T,
+  renderNode: (info: TreeNodeInfo<T>) => ReactNode,
   keyKey?: string
-  isNodeDraggable?: (node: RecordStringUnknown) => boolean | undefined
-  isNodeDroppable?: (node: RecordStringUnknown, draggedNode: RecordStringUnknown | undefined, index?: number) => boolean | undefined
-  customDragImage?: (e: React.DragEvent<HTMLElement>, node: RecordStringUnknown) => void,
-  onDragStart?: (e: React.DragEvent<HTMLElement>, node: RecordStringUnknown) => void,
-  onDragOver?: (e: React.DragEvent<HTMLElement>, node: RecordStringUnknown) => void,
+  isNodeDraggable?: (node: T) => boolean | undefined
+  isNodeDroppable?: (node: T, draggedNode: T | undefined, index?: number) => boolean | undefined
+  customDragImage?: (e: React.DragEvent<HTMLElement>, node: T) => void,
+  onDragStart?: (e: React.DragEvent<HTMLElement>, node: T) => void,
+  onDragOver?: (e: React.DragEvent<HTMLElement>, node: T) => void,
   onExternalDrag?: (e: React.DragEvent<HTMLElement>) => boolean | undefined,
-  onExternalDrop?: (e: React.DragEvent<HTMLElement>, parent: RecordStringUnknown, index: number) => void,
-  onChange?: (treeData: RecordStringUnknown) => void,
+  onExternalDrop?: (e: React.DragEvent<HTMLElement>, parent: T, index: number) => void,
+  onChange?: (treeData: T) => void,
 } & OptionalKeys<typeof defaultProps>
 
 export const defaultProps = {
@@ -33,12 +33,12 @@ export const defaultProps = {
   dragOpenDelay: 600,
 }
 
-export type TreeNodeInfo = {
+export type TreeNodeInfo<T extends Record<string, unknown>,> = {
   isPlaceholder: boolean,
   key: string | number,
-  node: RecordStringUnknown,
-  parent: RecordStringUnknown,
-  children: RecordStringUnknown[],
+  node: T,
+  parent: T,
+  children: T[],
   level: number,
   dragOver: boolean,
   draggable: boolean,
@@ -61,7 +61,7 @@ export type TreeNodeInfo = {
 }
 
 const dragOverInfo = {
-  node: null as RecordStringUnknown | null,
+  node: null as any,
   x: 0,
   y: 0,
   time: 0,
@@ -70,20 +70,20 @@ type KEYS = {
   CHECKED: string, CHILDREN: string, OPEN: string, KEY: string
 }
 
-export const _useTreeData = (props: HeTreeProps & KEYS) => {
+export const _useTreeData = <T extends Record<string, unknown>,>(props: HeTreeProps<T> & KEYS) => {
   const { CHECKED, CHILDREN, OPEN, KEY } = props
   const [refreshSeed, setrefreshSeed] = useState([]);
   const { flatInfos, infoByNodeMap } = useMemo(() => {
-    const flat: TreeNodeInfo[] = [];
+    const flat: TreeNodeInfo<T>[] = [];
     const resolveNode = (
       { isPlaceholder, key, node, parent, children, level, ...others }: {
         isPlaceholder: boolean,
         key: string | number,
-        node: RecordStringUnknown,
-        parent: RecordStringUnknown,
-        children: RecordStringUnknown[], level: number,
-      } & RecordStringUnknown
-    ): TreeNodeInfo => {
+        node: T,
+        parent: T,
+        children: T[], level: number,
+      } & T
+    ): TreeNodeInfo<T> => {
       isPlaceholder = Boolean(isPlaceholder)
       if (key == null) {
         key = flat.length // use index as key
@@ -118,13 +118,13 @@ export const _useTreeData = (props: HeTreeProps & KEYS) => {
         setrefreshSeed([])
       }
       const draggable = getDraggable(node, parent)
-      const info: TreeNodeInfo = {
+      const info: TreeNodeInfo<T> = {
         isPlaceholder, key, node, parent, children, level, dragOver: false, draggable, setOpen, setChecked, ...others,
       }
       return info
     }
 
-    const infoByNodeMap = new Map<RecordStringUnknown, TreeNodeInfo>()
+    const infoByNodeMap = new Map<T, TreeNodeInfo<T>>()
     for (const { node, parent, skipChildren } of traverseTreeNode(props.treeData, CHILDREN)) {
       // @ts-ignore
       const key: string = node[KEY]
@@ -133,7 +133,7 @@ export const _useTreeData = (props: HeTreeProps & KEYS) => {
       const parentInfo = parent && infoByNodeMap.get(parent)
       const level = parentInfo ? parentInfo.level + 1 : 0
       // @ts-ignore
-      const info: TreeNodeInfo = resolveNode({ key, node, parent, children, level })
+      const info: TreeNodeInfo<T> = resolveNode({ key, node, parent, children, level })
       infoByNodeMap.set(node, info)
       if (parentInfo) {
         parentInfo.children.push(node)
@@ -141,7 +141,7 @@ export const _useTreeData = (props: HeTreeProps & KEYS) => {
       flat.push(info)
     }
     // methods
-    function getDraggable(node: RecordStringUnknown, parent: RecordStringUnknown | undefined): boolean {
+    function getDraggable(node: T, parent: T | undefined): boolean {
       let draggable = infoByNodeMap.get(node)?.draggable
       if (draggable == undefined) {
         draggable = props.isNodeDraggable?.(node)
@@ -161,19 +161,19 @@ export const _useTreeData = (props: HeTreeProps & KEYS) => {
   return { flatInfos, infoByNodeMap }
 }
 
-export const _useDraggable = (props: { useTreeDataReturn: ReturnType<typeof _useTreeData> } & HeTreeProps & KEYS
+export const _useDraggable = <T extends Record<string, unknown>,>(props: { useTreeDataReturn: ReturnType<typeof _useTreeData<T>> } & HeTreeProps<T> & KEYS
 ) => {
   const { CHECKED, CHILDREN, OPEN, KEY } = props
   const { flatInfos, infoByNodeMap } = props.useTreeDataReturn
   const indent = props.indent!
-  const [draggedNode, setdraggedNode] = useState<RecordStringUnknown>();
-  const [draggedNodeDelayed, setdraggedNodeDelayed] = useState<RecordStringUnknown>();
-  const [dragOverNode, setdragOverNode] = useState<RecordStringUnknown>();
+  const [draggedNode, setdraggedNode] = useState<T>();
+  const [draggedNodeDelayed, setdraggedNodeDelayed] = useState<T>();
+  const [dragOverNode, setdragOverNode] = useState<T>();
   const virtualList = useRef<VirtualListHandle>(null);
-  const [placeholderInfo, setplaceholderInfo] = useState<(TreeNodeInfo & { _indexInVisible: number }) | null>();
+  const [placeholderInfo, setplaceholderInfo] = useState<(TreeNodeInfo<T> & { _indexInVisible: number }) | null>();
   const mainCache = useMemo(() => {
-    const visibleInfos: TreeNodeInfo[] = [];
-    for (const { node, parent, skipChildren } of traverseTreeChildren(props.treeData[CHILDREN] as RecordStringUnknown[], CHILDREN, props.treeData)) {
+    const visibleInfos: TreeNodeInfo<T>[] = [];
+    for (const { node, parent, skipChildren } of traverseTreeChildren(props.treeData[CHILDREN] as T[], CHILDREN, props.treeData)) {
       const info = infoByNodeMap.get(node)!
       completeInfo(info)
       visibleInfos.push(info)
@@ -211,8 +211,8 @@ export const _useDraggable = (props: { useTreeDataReturn: ReturnType<typeof _use
         e.preventDefault();
       }
     }
-    function completeInfo(info: TreeNodeInfo) {
-      const onDragStart: TreeNodeInfo['onDragStart'] = (e) => {
+    function completeInfo(info: TreeNodeInfo<T>) {
+      const onDragStart: TreeNodeInfo<T>['onDragStart'] = (e) => {
         e.dataTransfer!.setData("text", "he-tree"); // set data to work in Chrome Android
         // TODO 拖拽类型识别
         e.dataTransfer!.dropEffect = 'move'
@@ -329,7 +329,7 @@ export const _useDraggable = (props: { useTreeDataReturn: ReturnType<typeof _use
             } else {
               const parentMinLevel = next ? next.level - 1 : 0
               // find all droppable positions
-              const availablePositionsLeft: { parentInfo: TreeNodeInfo }[] = [];
+              const availablePositionsLeft: { parentInfo: TreeNodeInfo<T> }[] = [];
               const availablePositionsRight: typeof availablePositionsLeft = [];
               let cur = closest
               while (cur && cur.level >= parentMinLevel) {
@@ -386,13 +386,13 @@ export const _useDraggable = (props: { useTreeDataReturn: ReturnType<typeof _use
           'data-key': info.key,
           'data-level': info.level,
         }
-      } as TreeNodeInfo)
+      } as TreeNodeInfo<T>)
       if (props.customDragTrigger) {
         // @ts-ignore
         delete info.attrs.draggable; delete info.attrs.onDragStart;
       }
     }
-    function getDroppable(node: RecordStringUnknown, index?: number): boolean {
+    function getDroppable(node: T, index?: number): boolean {
       const isClose = props.foldable && node !== props.treeData && !node[OPEN]
       if (isClose) {
         return false
@@ -419,11 +419,11 @@ export const _useDraggable = (props: { useTreeDataReturn: ReturnType<typeof _use
         _indexInVisible: 0,
       }
     }
-    function findClosestAndNext(info: TreeNodeInfo) {
+    function findClosestAndNext(info: TreeNodeInfo<T>) {
       let closest = info
       let index = visibleInfos.indexOf(info) // index of closest node
       let atTop = false
-      const isPlaceholderOrDraggedNode = (info: TreeNodeInfo) => info.isPlaceholder || info.node === draggedNode
+      const isPlaceholderOrDraggedNode = (info: TreeNodeInfo<T>) => info.isPlaceholder || info.node === draggedNode
       const find = (startIndex: number, dir: number) => {
         let i = startIndex, cur
         do {
@@ -452,7 +452,7 @@ export const _useDraggable = (props: { useTreeDataReturn: ReturnType<typeof _use
     /**
      * calculate placeholder target index in target parent's children
      */
-    function getTargetIndex(targetParentInfo: TreeNodeInfo, next: TreeNodeInfo | undefined) {
+    function getTargetIndex(targetParentInfo: TreeNodeInfo<T>, next: TreeNodeInfo<T> | undefined) {
       let index = targetParentInfo.children.length
       if (next && next.parent === targetParentInfo.node) {
         index = targetParentInfo.children.indexOf(next.node)
@@ -471,7 +471,10 @@ export const _useDraggable = (props: { useTreeDataReturn: ReturnType<typeof _use
   return { draggedNode, dragOverNode, virtualList, persistentIndices, ...mainCache }
 }
 
-export const HeTree = function HeTree(props: HeTreeProps) {
+export interface HeTreeHandle {
+}
+
+export const HeTree = forwardRef(function HeTree<T extends Record<string, unknown>,>(props: HeTreeProps<T>, ref: React.ForwardedRef<HeTreeHandle>) {
   const keys = {
     KEY: props.keyKey!,
     CHILDREN: props.childrenKey!,
@@ -487,13 +490,13 @@ export const HeTree = function HeTree(props: HeTreeProps) {
   const { flatInfos, infoByNodeMap } = useTreeDataReturn
   const { draggedNode, dragOverNode, virtualList, persistentIndices, visibleInfos, onDragOverRoot } = _useDraggable({ useTreeDataReturn, ...keys, ...props })
   // 
-  const renderPlaceholder = (info: TreeNodeInfo) => {
+  const renderPlaceholder = (info: TreeNodeInfo<T>) => {
     return <div className="tree-drag-placeholder" ></div>
   }
   // 
   return (
     <div className="he-tree" onDragOver={onDragOverRoot}>
-      <VirtualList ref={virtualList} items={visibleInfos} virtual={false} persistentIndices={persistentIndices}
+      <VirtualList<TreeNodeInfo<T>> ref={virtualList} items={visibleInfos} virtual={false} persistentIndices={persistentIndices}
         renderItem={(info, index) => (
           <div className="tree-node-box" {...info.attrs} >
             {!info.isPlaceholder ? props.renderNode(info) : renderPlaceholder(info)}
@@ -502,8 +505,9 @@ export const HeTree = function HeTree(props: HeTreeProps) {
       />
     </div>
   )
-}
+})
 
+// @ts-ignore
 HeTree.defaultProps = defaultProps
 
 function getInnerX(el: HTMLElement, rightDirection = false) {
@@ -522,7 +526,7 @@ function calculateDistance(x1: number, y1: number, x2: number, y2: number) {
 }
 
 // : Generator<{node:T, parent: T|null}>
-export function* traverseTreeNode<T>(node: T, childrenKey = 'children', parent: T | null = null): Generator<{ node: T, parent: T | null, skipChildren: () => void }> {
+export function* traverseTreeNode<T extends Record<string, unknown>,>(node: T, childrenKey = 'children', parent: T | null = null): Generator<{ node: T, parent: T | null, skipChildren: () => void }> {
   let _skipChildren = false
   const skipChildren = () => { _skipChildren = true }
   yield { node, parent, skipChildren }
@@ -536,13 +540,13 @@ export function* traverseTreeNode<T>(node: T, childrenKey = 'children', parent: 
   }
 }
 
-export function* traverseTreeChildren<T>(children: T[], childrenKey = 'children', parent: T | null = null): ReturnType<typeof traverseTreeNode<T>> {
+export function* traverseTreeChildren<T extends Record<string, unknown>,>(children: T[], childrenKey = 'children', parent: T | null = null): ReturnType<typeof traverseTreeNode<T>> {
   for (const node of children) {
     yield* traverseTreeNode(node, childrenKey, parent)
   }
 }
 
-export function* traverseSelfAndParents<T>(node: T | null | undefined, parentKey = 'parent') {
+export function* traverseSelfAndParents<T extends Record<string, unknown>,>(node: T | null | undefined, parentKey = 'parent') {
   let cur = node
   while (cur) {
     yield cur
