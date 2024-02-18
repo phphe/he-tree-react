@@ -9,13 +9,14 @@ export type HeTreeProps<T extends Record<string, unknown>,> = {
   treeData: T,
   renderNode: (info: TreeNodeInfo<T>) => ReactNode,
   keyKey?: string
-  isNodeDraggable?: (node: T) => boolean | undefined
-  isNodeDroppable?: (node: T, draggedNode: T | undefined, index?: number) => boolean | undefined
+  isNodeDraggable?: (node: T) => boolean | null
+  isNodeDroppable?: (node: T, draggedNode: T | undefined, index?: number) => boolean | null
   customDragImage?: (e: React.DragEvent<HTMLElement>, node: T) => void,
   onDragStart?: (e: React.DragEvent<HTMLElement>, node: T) => void,
-  onDragOver?: (e: React.DragEvent<HTMLElement>, node: T) => void,
-  onExternalDrag?: (e: React.DragEvent<HTMLElement>) => boolean | undefined,
-  onExternalDrop?: (e: React.DragEvent<HTMLElement>, parent: T, index: number) => void,
+  onDragOver?: (e: React.DragEvent<HTMLElement>, node: T, isExternal: boolean) => void,
+  onExternalDrag?: (e: React.DragEvent<HTMLElement>) => boolean,
+  onDrop?: (e: React.DragEvent<HTMLElement>, parent: T, index: number, isExternal: boolean) => boolean | void,
+  onDragEnd?: (e: React.DragEvent<HTMLElement>, node: T, isOutside: boolean) => void,
   onChange?: (treeData: T) => void,
 } & OptionalKeys<typeof defaultProps>
 
@@ -40,7 +41,6 @@ export type TreeNodeInfo<T extends Record<string, unknown>,> = {
   parent: T,
   children: T[],
   level: number,
-  dragOver: boolean,
   draggable: boolean,
   setOpen: (open: boolean) => void,
   setChecked: (checked: boolean | null) => void,
@@ -59,6 +59,22 @@ export type TreeNodeInfo<T extends Record<string, unknown>,> = {
     'drag-placeholder'?: 'true'
   }
 }
+export interface HeTreeHandle<T extends Record<string, unknown>,> {
+  draggedNode: T | undefined,
+  dragOverNode: T | undefined,
+  infoByNodeMap: Map<T, TreeNodeInfo<T>>,
+  virtualList: React.RefObject<VirtualListHandle>,
+  getNodeParent: (node: T) => T | undefined,
+  traverseParentsFromSelf: (
+    node: T,
+    getParent?: (node: T) => T | null | undefined
+  ) => Generator<T>,
+  updateNode: (node: T,
+    newNodeOrUpdate: T | ((node: T) => void),
+  ) => void,
+  removeNode: (node: T) => void,
+  unappliedUpdates: Map<T, T>,
+}
 
 const dragOverInfo = {
   node: null as any,
@@ -72,8 +88,7 @@ type KEYS = {
 
 export const _useTreeData = <T extends Record<string, unknown>,>(props: HeTreeProps<T> & KEYS) => {
   const { CHECKED, CHILDREN, OPEN, KEY } = props
-  const [refreshSeed, setrefreshSeed] = useState([]);
-  const { flatInfos, infoByNodeMap } = useMemo(() => {
+  const mainCache = useMemo(() => {
     const flat: TreeNodeInfo<T>[] = [];
     const resolveNode = (
       { isPlaceholder, key, node, parent, children, level, ...others }: {
@@ -89,37 +104,43 @@ export const _useTreeData = <T extends Record<string, unknown>,>(props: HeTreePr
         key = flat.length // use index as key
       }
       const setOpen = (open: boolean) => {
-        node[OPEN] = open
-        setrefreshSeed([])
+        updateNode(node, (node) => {
+          // @ts-ignore
+          node[OPEN] = open
+        })
       }
       const setChecked = (checked: boolean | null) => {
-        node[CHECKED] = checked
+        const setCheckedOne = (node: T, checked: boolean | null) => {
+          updateNode(node, (node) => {
+            // @ts-ignore
+            node[CHECKED] = checked
+          })
+        }
+        setCheckedOne(node, checked)
         if (node[CHILDREN]) {
           // @ts-ignore
-          for (const { node: child } of traverseTreeChildren(node[CHILDREN], CHILDREN)) {
-            // @ts-ignore
-            child[CHECKED] = checked
+          for (const { node: child } of traverseTreeChildren<T>(node[CHILDREN], CHILDREN)) {
+            setCheckedOne(child, checked)
           }
         }
-        for (const parent of traverseSelfAndParents(info.parent, 'parent')) {
+        for (const parent of traverseParentsFromSelf(info.parent)) {
           // @ts-ignore
           let allChecked = true
           let hasChecked = false
           // @ts-ignore
           parent[CHILDREN].forEach(v => {
-            if (v[CHECKED]) {
+            if ((unappliedUpdates.get(v) || v)[CHECKED]) {
               hasChecked = true
             } else {
               allChecked = false
             }
           })
-          parent[CHECKED] = allChecked ? true : (hasChecked ? null : false)
+          setCheckedOne(parent, allChecked ? true : (hasChecked ? null : false))
         }
-        setrefreshSeed([])
       }
       const draggable = getDraggable(node, parent)
       const info: TreeNodeInfo<T> = {
-        isPlaceholder, key, node, parent, children, level, dragOver: false, draggable, setOpen, setChecked, ...others,
+        isPlaceholder, key, node, parent, children, level, draggable, setOpen, setChecked, ...others,
       }
       return info
     }
@@ -141,8 +162,73 @@ export const _useTreeData = <T extends Record<string, unknown>,>(props: HeTreePr
       flat.push(info)
     }
     // methods
+    const getNodeParent: HeTreeHandle<T>['getNodeParent'] = (node: T) => infoByNodeMap.get(node)?.parent
+    const traverseParentsFromSelf: HeTreeHandle<T>['traverseParentsFromSelf'] = function* (node, getParent) {
+      let cur = node
+      while (cur) {
+        yield cur
+        const parent = getParent ? getParent(cur) : getNodeParent(cur)
+        // @ts-ignore
+        cur = parent
+      }
+    }
+    const unappliedUpdates = new Map<T, T>() // cached node updates before next update of React
+    // store update to unappliedUpdates
+    const storeUpdate = (node: T, newNode: T) => {
+      unappliedUpdates.set(node, newNode)
+      infoByNodeMap.set(newNode, infoByNodeMap.get(node)!)
+    }
+    const updateNode: HeTreeHandle<T>['updateNode'] = (node, newNodeOrUpdate) => {
+      let newNode: T
+      if (typeof newNodeOrUpdate === 'function') {
+        newNode = unappliedUpdates.get(node) || { ...node }
+        if (newNode[CHILDREN]) {
+          // @ts-ignore
+          newNode[CHILDREN] = newNode[CHILDREN].slice()
+        }
+        newNodeOrUpdate(newNode)
+      } else {
+        newNode = newNodeOrUpdate
+      }
+      storeUpdate(node, newNode)
+      let child = node
+      const parent = getNodeParent(node)
+      if (parent) {
+        for (const node of traverseParentsFromSelf(parent)) {
+          const cachedNewNode = unappliedUpdates.get(node)
+          let newNode = cachedNewNode || { ...node }
+          storeUpdate(node, newNode)
+          const childNew = unappliedUpdates.get(child)
+          // @ts-ignore
+          const index = node[CHILDREN].indexOf(child)
+          if (newNode[CHILDREN] === node[CHILDREN]) {
+            // @ts-ignore
+            newNode[CHILDREN] = newNode[CHILDREN].slice()
+          }
+          // @ts-ignore
+          newNode[CHILDREN][index] = childNew
+          child = node
+          if (cachedNewNode) {
+            break
+          }
+        }
+      }
+      const newTreeData = unappliedUpdates.get(props.treeData) || unappliedUpdates.get(child)!
+      props.onChange!(newTreeData)
+    }
+    const removeNode: HeTreeHandle<T>['removeNode'] = (node) => {
+      // error when remove node is root or not in treeData
+      const parent = getNodeParent(node)!
+      updateNode(parent, (newParent) => {
+        newParent[CHILDREN]
+        // @ts-ignore
+        const index = newParent[CHILDREN].indexOf(node)
+        // @ts-ignore
+        newParent[CHILDREN].splice(index, 1)
+      })
+    }
     function getDraggable(node: T, parent: T | undefined): boolean {
-      let draggable = infoByNodeMap.get(node)?.draggable
+      let draggable: boolean | null | undefined = infoByNodeMap.get(node)?.draggable
       if (draggable == undefined) {
         draggable = props.isNodeDraggable?.(node)
       }
@@ -156,15 +242,21 @@ export const _useTreeData = <T extends Record<string, unknown>,>(props: HeTreePr
       }
       return draggable
     }
-    return { flatInfos: flat, infoByNodeMap }
-  }, [refreshSeed, props.treeData, CHECKED, CHILDREN, OPEN, KEY, props.isNodeDraggable,])
-  return { flatInfos, infoByNodeMap }
+    return {
+      flatInfos: flat, infoByNodeMap,
+      getNodeParent,
+      traverseParentsFromSelf,
+      updateNode,
+      removeNode,
+      unappliedUpdates,
+    }
+  }, [props.treeData, CHECKED, CHILDREN, OPEN, KEY, props.isNodeDraggable, props.onChange])
+  return mainCache
 }
 
-export const _useDraggable = <T extends Record<string, unknown>,>(props: { useTreeDataReturn: ReturnType<typeof _useTreeData<T>> } & HeTreeProps<T> & KEYS
+export const _useDraggable = <T extends Record<string, unknown>,>(props: HeTreeProps<T> & ReturnType<typeof _useTreeData<T>> & KEYS
 ) => {
-  const { CHECKED, CHILDREN, OPEN, KEY } = props
-  const { flatInfos, infoByNodeMap } = props.useTreeDataReturn
+  const { CHECKED, CHILDREN, OPEN, KEY, flatInfos, infoByNodeMap } = props
   const indent = props.indent!
   const [draggedNode, setdraggedNode] = useState<T>();
   const [draggedNodeDelayed, setdraggedNodeDelayed] = useState<T>();
@@ -265,7 +357,8 @@ export const _useDraggable = <T extends Record<string, unknown>,>(props: { useTr
           style,
           onDragStart,
           onDragOver(e) {
-            if (!isInnerDrag() && !props.onExternalDrag?.(e)) {
+            const isExternal = !isInnerDrag()
+            if (isExternal && !props.onExternalDrag?.(e)) {
               return
             }
             // @ts-ignore
@@ -368,17 +461,59 @@ export const _useDraggable = <T extends Record<string, unknown>,>(props: { useTr
               e.preventDefault(); // call mean droppable
             }
             setdragOverNode(info.node)
-            props.onDragOver?.(e, info.node)
+            props.onDragOver?.(e, info.node, isExternal)
           },
           onDrop(e) {
-            e.preventDefault();
+            const isExternal = !isInnerDrag()
+            if (isExternal && !props.onExternalDrag?.(e)) {
+              return
+            }
+            let customized = false
+            if (placeholderInfo) {
+              const { parent } = placeholderInfo
+              console.log(placeholderInfo);
+
+              // @ts-ignore
+              let targetIndex: number = infoByNodeMap.get(parent)._targetIndex
+              let draggedNodeIndex: number
+              if (!isExternal) {
+                const draggedNodeInfo = infoByNodeMap.get(draggedNode!)!
+                const siblings = parent[CHILDREN] as T[]
+                if (draggedNodeInfo.parent === parent) {
+                  draggedNodeIndex = siblings.indexOf(draggedNode!)
+                  if (targetIndex > draggedNodeIndex) {
+                    targetIndex--
+                  }
+                }
+              }
+              if (props.onDrop?.(e, parent, targetIndex, isExternal) === false) {
+                customized = true
+              }
+              if (!customized && !isExternal) {
+                // move node
+                props.removeNode(draggedNode!)
+                props.updateNode(parent, (parent) => {
+                  parent = props.unappliedUpdates.get(parent) || parent
+                  if (!parent[CHILDREN]) {
+                    // @ts-ignore
+                    parent[CHILDREN] = []
+                  }
+                  // @ts-ignore
+                  parent[CHILDREN].splice(targetIndex, 0, draggedNode)
+                })
+              }
+            }
+            if (!customized) {
+              e.preventDefault();
+            }
             setdragOverNode(undefined);
             setdraggedNode(undefined);
             setdraggedNodeDelayed(undefined);
             setplaceholderInfo(undefined);
           },
           onDragEnter(e) {
-            setdragOverNode(info.node)
+            // call setdragOverNode in onDragOver
+            // setdragOverNode(info.node)
           },
           onDragLeave(e) {
             setdragOverNode(undefined)
@@ -461,20 +596,17 @@ export const _useDraggable = <T extends Record<string, unknown>,>(props: { useTr
     }
     return { visibleInfos, onDragOverRoot }
   }, [
-    draggedNodeDelayed,
+    draggedNodeDelayed, flatInfos, infoByNodeMap,
     // watch placeholder position
     placeholderInfo?.parent, placeholderInfo?._indexInVisible,
     // watch props
-    props.useTreeDataReturn.flatInfos, props.useTreeDataReturn.infoByNodeMap, props.treeData, props.foldable, OPEN, CHILDREN, indent, props.customDragTrigger, props.isNodeDroppable, props.customDragImage, props.onDragStart, props.onDragOver, props.onExternalDrag, props.onExternalDrop, props.onChange,
+    props.treeData, props.foldable, OPEN, CHILDREN, indent, props.customDragTrigger, props.isNodeDroppable, props.customDragImage, props.onDragStart, props.onDragOver, props.onExternalDrag, props.onDrop, props.onDragEnd, props.onChange,
   ])
   const persistentIndices = useMemo(() => draggedNode ? [mainCache.visibleInfos.indexOf(infoByNodeMap.get(draggedNode)!)] : [], [draggedNode, mainCache.visibleInfos, infoByNodeMap]);
   return { draggedNode, dragOverNode, virtualList, persistentIndices, ...mainCache }
 }
 
-export interface HeTreeHandle {
-}
-
-export const HeTree = forwardRef(function HeTree<T extends Record<string, unknown>,>(props: HeTreeProps<T>, ref: React.ForwardedRef<HeTreeHandle>) {
+export const HeTree = forwardRef(function HeTree<T extends Record<string, unknown>,>(props: HeTreeProps<T>, ref: React.ForwardedRef<HeTreeHandle<T>>) {
   const keys = {
     KEY: props.keyKey!,
     CHILDREN: props.childrenKey!,
@@ -487,8 +619,28 @@ export const HeTree = forwardRef(function HeTree<T extends Record<string, unknow
   // flat treeData and info
   // info.children does not include placeholder
   const useTreeDataReturn = _useTreeData({ ...keys, ...props })
-  const { flatInfos, infoByNodeMap } = useTreeDataReturn
-  const { draggedNode, dragOverNode, virtualList, persistentIndices, visibleInfos, onDragOverRoot } = _useDraggable({ useTreeDataReturn, ...keys, ...props })
+  const { flatInfos, infoByNodeMap,
+    traverseParentsFromSelf,
+    getNodeParent,
+    updateNode,
+    removeNode,
+    unappliedUpdates,
+  } = useTreeDataReturn
+  const { draggedNode, dragOverNode, virtualList, persistentIndices, visibleInfos, onDragOverRoot } = _useDraggable({ ...useTreeDataReturn, ...keys, ...props })
+  // expose handle
+  useImperativeHandle(ref, () => {
+    return {
+      draggedNode,
+      dragOverNode,
+      infoByNodeMap,
+      virtualList,
+      getNodeParent,
+      traverseParentsFromSelf,
+      updateNode,
+      removeNode,
+      unappliedUpdates,
+    }
+  }, [draggedNode, dragOverNode, infoByNodeMap,])
   // 
   const renderPlaceholder = (info: TreeNodeInfo<T>) => {
     return <div className="tree-drag-placeholder" ></div>
@@ -525,7 +677,7 @@ function calculateDistance(x1: number, y1: number, x2: number, y2: number) {
   return Math.sqrt(Math.pow((x2 - x1), 2) + Math.pow((y2 - y1), 2));
 }
 
-// : Generator<{node:T, parent: T|null}>
+// utils methods ==================================
 export function* traverseTreeNode<T extends Record<string, unknown>,>(node: T, childrenKey = 'children', parent: T | null = null): Generator<{ node: T, parent: T | null, skipChildren: () => void }> {
   let _skipChildren = false
   const skipChildren = () => { _skipChildren = true }
@@ -546,11 +698,4 @@ export function* traverseTreeChildren<T extends Record<string, unknown>,>(childr
   }
 }
 
-export function* traverseSelfAndParents<T extends Record<string, unknown>,>(node: T | null | undefined, parentKey = 'parent') {
-  let cur = node
-  while (cur) {
-    yield cur
-    // @ts-ignore
-    cur = cur[parentKey]
-  }
-}
+// utils methods end ==================================
