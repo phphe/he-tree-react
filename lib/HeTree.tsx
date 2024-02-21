@@ -7,21 +7,15 @@ import type { } from 'type-fest';
 const forwardRef = React.forwardRef as FixedForwardRef
 
 // types ==================================
-type IDType = string | number
-
-export interface StatBase {
-  id: IDType,
-  pid: IDType | null,
-  childIds: IDType[],
-  siblingIds: IDType[],
+export type Id = string | number
+export type Checked = boolean | null
+export interface Stat<T> {
+  id: Id,
+  pid: Id | null,
+  childIds: Id[],
+  siblingIds: Id[],
   index: number,
   level: number,
-  open: boolean,
-  checked: boolean | null,
-  draggable: boolean,
-  _isStat?: boolean,
-}
-export interface Stat<T> extends StatBase {
   node: T,
   parent: T | null,
   parentStat: Stat<T> | null,
@@ -29,6 +23,10 @@ export interface Stat<T> extends StatBase {
   childStats: Stat<T>[],
   siblings: T[],
   siblingStats: Stat<T>[],
+  _isStat?: boolean,
+  open: boolean,
+  checked: Checked,
+  draggable: boolean,
 }
 
 // single instance ==================================
@@ -94,17 +92,17 @@ export function useTree<T extends Record<string, any>>(
   // mainCache ==================================
   const mainCache = useMemo(
     () => {
-      const stats: Record<IDType, Stat<T>> = {}
-      const nodes: Record<IDType, T> = {}
-      const openedIds: IDType[] = []
-      const checkedIds: IDType[] = []
-      const semiCheckedIds: IDType[] = []
-      const rootIds: StatBase['childIds'] = []
+      const stats: Record<Id, Stat<T>> = {}
+      const nodes: Record<Id, T> = {}
+      const openedIds: Id[] = []
+      const checkedIds: Id[] = []
+      const semiCheckedIds: Id[] = []
+      const rootIds: Id[] = []
       const rootNodes: T[] = []
       const rootNodeStats: Stat<T>[] = []
       // 
-      const tasks: Record<IDType, (parentStat: Stat<T>) => void> = {}
-      const addTask = (pid: IDType, task: (parentStat?: Stat<T>) => void) => {
+      const tasks: Record<Id, (parentStat: Stat<T>) => void> = {}
+      const addTask = (pid: Id, task: (parentStat?: Stat<T>) => void) => {
         const parentStat = stats[pid]
         if (parentStat) {
           task(parentStat)
@@ -116,20 +114,20 @@ export function useTree<T extends Record<string, any>>(
           }
         }
       }
-      const removeTask = (id: IDType) => {
+      const removeTask = (id: Id) => {
         tasks[id]?.(stats[id])
         delete tasks[id]
       }
       // 
       for (const node of props.data) {
-        const id = node[ID] as IDType
-        const pid = node[PID] as IDType
+        const id = node[ID] as Id
+        const pid = node[PID] as Id
         const parent = nodes[pid] || null
         addTask(pid, () => {
 
         })
         const parentStat = stats[pid] || null;
-        const childIds: StatBase['childIds'] = []
+        const childIds: Id[] = []
         const children: T[] = []
         const childStats: Stat<T>[] = []
         let siblingIds, siblings, siblingStats
@@ -195,8 +193,8 @@ export function useTree<T extends Record<string, any>>(
 
         }
       }
-      const getStat = (nodeOrStatOrId: T | Stat<T> | IDType) => {
-        let id: IDType
+      const getStat = (nodeOrStatOrId: T | Stat<T> | Id) => {
+        let id: Id
         if (typeof nodeOrStatOrId === 'object') {
           // @ts-ignore
           id = nodeOrStatOrId._isStat ? nodeOrStatOrId.id : nodeOrStatOrId[ID]
@@ -210,7 +208,7 @@ export function useTree<T extends Record<string, any>>(
         const skip = () => { _skip = true }
         yield* walk(node)
         function* walk(node?: T | null): Generator<{ node: T, stat: Stat<T>, skip: () => void }> {
-          let childIds: IDType[]
+          let childIds: Id[]
           if (node) {
             const stat = stats[node[ID]]
             yield { node, stat, skip }
@@ -238,8 +236,8 @@ export function useTree<T extends Record<string, any>>(
       function resolveChecked(node: T, checked: boolean) {
         const ckSet = new Set(checkedIds);
         const semiSet = new Set(semiCheckedIds);
-        const t: Record<IDType, StatBase['checked']> = {}
-        const update = (id: IDType, checked: StatBase['checked']) => {
+        const t: Record<Id, Checked> = {}
+        const update = (id: Id, checked: Checked) => {
           t[id] = checked
           if (checked === null) {
             ckSet.delete(id)
@@ -298,7 +296,7 @@ export function useTree<T extends Record<string, any>>(
   const isExternal = !draggedStat
   const cacheForVisible = useMemo(
     () => {
-      const visibleIds: IDType[] = []
+      const visibleIds: Id[] = []
       const attrsList: (React.HTMLProps<HTMLDivElement> & { 'data-key': string, 'data-level': string, 'data-node-box': boolean, 'data-drag-placeholder'?: boolean })[] = []
       for (const { stat, skip } of traverseChildNodesIncludingSelf()) {
         const attr = createAttrs(stat)
@@ -587,7 +585,7 @@ export function useTree<T extends Record<string, any>>(
         let closest = stat
         let index = visibleIds.indexOf(stat.id) // index of closest node
         let atTop = false
-        const isPlaceholderOrDraggedNode = (id: IDType) => id === props.placeholderId || getStat(id) === draggedStat
+        const isPlaceholderOrDraggedNode = (id: Id) => id === props.placeholderId || getStat(id) === draggedStat
         const find = (startIndex: number, step: number) => {
           let i = startIndex, cur
           do {
@@ -650,7 +648,7 @@ export const HeTree = <T extends Record<string, any>,>(props: ReturnType<typeof 
   // 
   return (
     <div className="he-tree" onDragOver={props.onDragOverRoot} onDrop={props.onDropToRoot}>
-      <VirtualList<IDType> ref={props.virtualList} items={props.visibleIds} virtual={false} persistentIndices={persistentIndices}
+      <VirtualList<Id> ref={props.virtualList} items={props.visibleIds} virtual={false} persistentIndices={persistentIndices}
         renderItem={(id, index) => (
           <div {...props.attrsList[index]}>
             {
@@ -695,3 +693,5 @@ export function* traverseTreeData<T>(
 function calculateDistance(x1: number, y1: number, x2: number, y2: number) {
   return Math.sqrt(Math.pow((x2 - x1), 2) + Math.pow((y2 - y1), 2));
 }
+
+
