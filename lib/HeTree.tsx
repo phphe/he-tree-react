@@ -2,7 +2,6 @@ import "./HeTree.css";
 import React, { useEffect, useMemo, useState, useRef, ReactNode, useCallback, useImperativeHandle } from "react";
 import * as hp from "helper-js";
 import { VirtualList, VirtualListHandle, FixedForwardRef } from "./VirtualList";
-import type { } from 'type-fest';
 
 const forwardRef = React.forwardRef as FixedForwardRef
 
@@ -38,33 +37,19 @@ const dragOverInfo = {
 }
 
 // react hooks ==================================
-export const defaultProps_useTreeData = {
-  idKey: 'id',
-  parentIdKey: 'parentId',
-  childrenKey: 'children',
-  flat: false,
-}
-export function useTreeData<T extends Record<string, any>>(prop0: {
-  data: T[],
-} & Partial<typeof defaultProps_useTreeData>) {
-  const props = { ...defaultProps_useTreeData, ...prop0 }
-  const { idKey: ID, parentIdKey: PID, childrenKey: CHILDREN } = props
-  const memoizedValue = useMemo(
-    () => {
-
-    }, []
-  );
-}
 export const defaultProps = {
   /**
    * 
    */
   idKey: 'id',
   parentIdKey: 'parentId',
+  childrenKey: 'children',
   indent: 20,
   dragOpen: false,
   dragOpenDelay: 600,
   placeholderId: '__DRAG_PLACEHOLDER__',
+  dataType: 'flat' as 'tree' | 'flat',
+  rootId: null as any,
 }
 
 export function useTree<T extends Record<string, any>>(
@@ -88,44 +73,52 @@ export function useTree<T extends Record<string, any>>(
   } & Partial<typeof defaultProps>
 ) {
   const props = { ...defaultProps, ...props0 }
-  const { idKey: ID, parentIdKey: PID, isFunctionReactive } = props
+  const { idKey: ID, parentIdKey: PID, childrenKey: CHILDREN, isFunctionReactive } = props
   // mainCache ==================================
   const mainCache = useMemo(
     () => {
-      const stats: Record<Id, Stat<T>> = {}
+      const stats: Record<Id, Stat<T>> = {} // You can't get ordered values from an object. Because Chrome doesn't support it. https://segmentfault.com/a/1190000018306931
       const nodes: Record<Id, T> = {}
       const openedIds: Id[] = []
       const checkedIds: Id[] = []
       const semiCheckedIds: Id[] = []
       const rootIds: Id[] = []
       const rootNodes: T[] = []
-      const rootNodeStats: Stat<T>[] = []
+      const rootStats: Stat<T>[] = []
       // 
-      const tasks: Record<Id, (parentStat: Stat<T>) => void> = {}
-      const addTask = (pid: Id, task: (parentStat?: Stat<T>) => void) => {
-        const parentStat = stats[pid]
-        if (parentStat) {
-          task(parentStat)
+      function* simpleWalk() {
+        if (props.dataType === 'flat') {
+          const childrenById = new Map<Id | null, T[]>()
+          childrenById.set(null, [])
+          const rootNodes2 = childrenById.get(null)!
+          for (const v of props.data) {
+            const id = v[ID]
+            childrenById.set(id, [])
+          }
+          for (const v of props.data) {
+            const pid = v[PID]
+            const siblings = childrenById.get(pid) || rootNodes2
+            siblings.push(v)
+          }
+          function* walkArr(arr: T[]): Generator<T> {
+            for (const node of arr) {
+              yield node
+              const id = node[ID]
+              yield* walkArr(childrenById.get(id)!)
+            }
+          }
+          yield* walkArr(rootNodes2)
         } else {
-          const old = tasks[pid]
-          tasks[pid] = (parentStat) => {
-            old?.(parentStat)
-            task(parentStat)
+          for (const { node } of walkTreeData(props.data, CHILDREN)) {
+            yield node
           }
         }
       }
-      const removeTask = (id: Id) => {
-        tasks[id]?.(stats[id])
-        delete tasks[id]
-      }
-      // 
-      for (const node of props.data) {
-        const id = node[ID] as Id
+      let count = 0
+      for (const node of simpleWalk()) {
+        const id: Id = node[ID] ?? count
         const pid = node[PID] as Id
         const parent = nodes[pid] || null
-        addTask(pid, () => {
-
-        })
         const parentStat = stats[pid] || null;
         const childIds: Id[] = []
         const children: T[] = []
@@ -134,7 +127,7 @@ export function useTree<T extends Record<string, any>>(
         if (!parentStat) {
           siblingIds = rootIds
           siblings = rootNodes
-          siblingStats = rootNodeStats
+          siblingStats = rootStats
         } else {
           siblingIds = parentStat.childIds
           siblings = parentStat.children
@@ -170,7 +163,7 @@ export function useTree<T extends Record<string, any>>(
         } else {
           rootIds.push(id)
           rootNodes.push(node)
-          rootNodeStats.push(stat)
+          rootStats.push(stat)
         }
         if (stat.open) {
           openedIds.push(id)
@@ -180,18 +173,15 @@ export function useTree<T extends Record<string, any>>(
         } else if (stat.checked === null) {
           semiCheckedIds.push(id)
         }
+        count++
       }
       // after stats ready
-      for (const stat of Object.values(stats)) {
+      for (const { node: stat } of walkTreeData(rootStats, 'childStats')) {
         let draggable = props.canDrag?.(stat) ?? null
         if (draggable === null) {
           draggable = stat.parentStat ? stat.parentStat.draggable : true
         }
         stat.draggable = draggable
-        if (!draggable) {
-          console.log(stat);
-
-        }
       }
       const getStat = (nodeOrStatOrId: T | Stat<T> | Id) => {
         let id: Id
@@ -203,35 +193,32 @@ export function useTree<T extends Record<string, any>>(
         }
         return stats[id]
       }
-      function* traverseChildNodesIncludingSelf(node?: T | null) {
-        let _skip = false
-        const skip = () => { _skip = true }
-        yield* walk(node)
-        function* walk(node?: T | null): Generator<{ node: T, stat: Stat<T>, skip: () => void }> {
-          let childIds: Id[]
-          if (node) {
-            const stat = stats[node[ID]]
-            yield { node, stat, skip }
-            childIds = stat.childIds
-          } else {
-            childIds = rootIds
-          }
-          if (_skip) {
-            _skip = false
-          } else {
-            for (const childId of childIds) {
-              const child = nodes[childId]
-              yield* walk(child)
-            }
+      let draft: T[] | null = null
+      function getDraft() {
+        if (!draft) {
+          const map = new Map<Stat<T> | null, T[]>()
+          map.set(null, [])
+          draft = map.get(null)!
+          for (const { node: stat, parent: parentStat } of walkTreeData(rootStats, 'childStats')) {
+            const newNode = { ...stat.node, [CHILDREN]: [] }
+            map.set(stat, newNode[CHILDREN])
+            map.get(parentStat)!.push(newNode)
           }
         }
+        return draft
       }
-      function* traverseParentsIncludingSelf(node?: T | null) {
-        while (node) {
-          const stat = stats[node[ID]]
-          yield { node, stat }
-          node = nodes[stat.pid!]
+      function nextData() {
+        const draft = getDraft()
+        let result = draft
+        if (props.dataType === 'flat') {
+          result = [];
+          for (const { node, parent } of walkTreeData(draft, CHILDREN)) {
+            // @ts-ignore
+            node[PID] = parent ? parent[ID] : props.rootId
+            result.push(node)
+          }
         }
+        return result
       }
       function resolveChecked(node: T, checked: boolean) {
         const ckSet = new Set(checkedIds);
@@ -274,19 +261,20 @@ export function useTree<T extends Record<string, any>>(
       return {
         stats, nodes, openedIds, checkedIds, semiCheckedIds,
         // root
-        rootIds, rootNodes, rootNodeStats,
+        rootIds, rootNodes, rootStats,
         // methods
         getStat,
-        traverseChildNodesIncludingSelf,
-        traverseParentsIncludingSelf,
         resolveChecked,
+        getDraft,
+        nextData,
       }
-    }, [props.data, ID, PID,
+    }, [props.data, props.dataType, ID, PID, props.rootId,
     isFunctionReactive && props.isOpen,
     isFunctionReactive && props.isChecked,
     isFunctionReactive && props.canDrag,
-  ]);
-  const { stats, nodes, traverseChildNodesIncludingSelf, rootIds, getStat } = mainCache;
+  ]
+  );
+  const { stats, nodes, rootIds, rootStats, getStat, getDraft, nextData } = mainCache;
   // about drag ==================================
   const indent = props.indent!
   const [draggedStat, setdraggedStat] = useState<Stat<T>>();
@@ -297,8 +285,8 @@ export function useTree<T extends Record<string, any>>(
   const cacheForVisible = useMemo(
     () => {
       const visibleIds: Id[] = []
-      const attrsList: (React.HTMLProps<HTMLDivElement> & { 'data-key': string, 'data-level': string, 'data-node-box': boolean, 'data-drag-placeholder'?: boolean })[] = []
-      for (const { stat, skip } of traverseChildNodesIncludingSelf()) {
+      const attrsList: (React.HTMLProps<HTMLDivElement> & { 'data-key': string, 'data-level': string, 'data-node-box': boolean, 'data-drag-placeholder'?: boolean })[] = [];
+      for (const { node: stat, skipChildren } of walkTreeData(rootStats, 'childStats')) {
         const attr = createAttrs(stat)
         if (stat === draggedStat) {
           // hide dragged node but don't remove it. Because dragend event won't be triggered if without it.
@@ -313,24 +301,37 @@ export function useTree<T extends Record<string, any>>(
         }
         attrsList.push(attr)
         visibleIds.push(stat.id)
-        if (!stat.open) {
-          skip()
+        if (!stat.open || stat === draggedStat) {
+          skipChildren()
         }
       }
       if (placeholder) {
-        // get placeholder's index in visibleIds
-        let indexInVisible = placeholder.parentStat ? visibleIds.indexOf(placeholder.parentStat.id) : 0
-        const until = getStat((placeholder.parentStat?.childIds || rootIds)[placeholder.index])
-        for (const { stat, node, skip } of traverseChildNodesIncludingSelf(placeholder.parentStat?.node)) {
-          if (stat === until) {
-            break
+        const toIndexInVisible = (parentStat: Stat<T> | null, index: number) => {
+          let find = (parentStat?.childStats || rootStats)[index];
+          let finalIndex
+          if (find) {
+            finalIndex = visibleIds.indexOf(find.id)
+          } else {
+            const getNext = (stat: Stat<T>) => stat.siblingStats[stat.siblingStats.indexOf(stat) + 1];
+            let next
+            if (parentStat) {
+              for (const stat of walkParents(parentStat, 'parentStat', { withSelf: true })) {
+                next = getNext(stat);
+                if (next) {
+                  break;
+                }
+              }
+            }
+            if (next) {
+              finalIndex = visibleIds.indexOf(next.id)
+            } else {
+              finalIndex = visibleIds.length
+            }
           }
-          indexInVisible++
-          if (!stat.open) {
-            skip()
-          }
+          return finalIndex
         }
-        console.log(indexInVisible, placeholder.index);
+        // get placeholder's index in visibleIds
+        const indexInVisible = toIndexInVisible(placeholder.parentStat, placeholder.index)
         // 
         visibleIds.splice(indexInVisible, 0, props.placeholderId)
         // @ts-ignore
@@ -432,6 +433,7 @@ export function useTree<T extends Record<string, any>>(
             // dragOpen end ========================
             let t = findClosestAndNext(stat, isPlaceholder)
             const { closest, next } = t
+
             let { atTop } = t
             const listRoot = virtualList.current!.getRootElement()
             // @ts-ignore
@@ -465,13 +467,17 @@ export function useTree<T extends Record<string, any>>(
               const availablePositionsLeft: { parentStat: Stat<T>, index: number }[] = [];
               const availablePositionsRight: typeof availablePositionsLeft = [];
               let cur = closest
-              while (cur && cur.level >= parentMinLevel) {
+              const curLevel = () => cur ? cur.level : 0
+              while (curLevel() >= parentMinLevel) {
                 const index = getTargetIndex(cur, next)
                 if (getDroppable(cur, index)) {
-                  (placeholderLevel > cur.level ? availablePositionsLeft : availablePositionsRight).unshift({
+                  (placeholderLevel > curLevel() ? availablePositionsLeft : availablePositionsRight).unshift({
                     parentStat: cur,
                     index,
                   })
+                }
+                if (!cur) {
+                  break
                 }
                 cur = cur.parentStat!
               }
@@ -529,33 +535,42 @@ export function useTree<T extends Record<string, any>>(
         let customized = false
         if (placeholder) {
           const { index: targetIndexInSiblings } = placeholder
-          // if (!isExternal) {
-          //   if (draggedStat.parentStat === placeholder.parentStat && targetIndexInSiblings > draggedStat.index) {
-          //     targetIndexInSiblings--
-          //   }
-          // }
           if (props.onDrop?.(e, placeholder.parentStat, targetIndexInSiblings, isExternal) === false) {
             customized = true
           }
           if (!customized && !isExternal) {
             // move node
-            const newData = props.data.slice()
-            // index in data
-            const startIndex = newData.indexOf(draggedStat.node) // drag start index
-            let targetIndex = (placeholder.parentStat ? newData.indexOf(placeholder.parentStat.node) + 1 : 0) + targetIndexInSiblings
-            let draggedCount = [...traverseChildNodesIncludingSelf(draggedStat.node)].length
-            if (startIndex < targetIndex) {
-              targetIndex -= draggedCount
-              console.log('--');
-
+            const draft = getDraft()
+            let draggedSiblings: T[], targetSiblings: T[]
+            if (!placeholder.parentStat) {
+              targetSiblings = draft
             }
-            console.log(startIndex, targetIndex, targetIndexInSiblings, 'x');
-            const moved = newData.splice(startIndex, draggedCount)
-            newData.splice(targetIndex, 0, ...moved)
-            newData[targetIndex] = { ...draggedStat.node, [PID]: placeholder.parentStat?.id ?? null }
-            console.log(newData[targetIndex]);
-
-            props.onChange(newData)
+            let draggedNodeDraft: T
+            for (const { node, siblings } of walkTreeData(draft, CHILDREN)) {
+              if (node[ID] === draggedStat.id) {
+                draggedSiblings = siblings
+                draggedNodeDraft = node
+              }
+              if (!targetSiblings! && node[ID] === placeholder.parentStat!.id) {
+                targetSiblings = node[CHILDREN]
+              }
+              if (draggedSiblings! && targetSiblings!) {
+                break
+              }
+            }
+            const ds = draggedSiblings!
+            const ts = targetSiblings!
+            const startIndex = ds.findIndex(v => v[ID] === draggedStat.id)
+            let targetIndex = placeholder.index
+            // check index
+            if (ds === ts && placeholder.index > startIndex) {
+              targetIndex -= 1
+            }
+            // remove from start position
+            ds.splice(startIndex, 1)
+            // move to target position
+            ts.splice(targetIndex, 0, draggedNodeDraft!)
+            props.onChange(nextData())
           }
         }
         if (!customized) {
@@ -614,10 +629,11 @@ export function useTree<T extends Record<string, any>>(
       /**
        * calculate placeholder target index in target parent's children
        */
-      function getTargetIndex(targetParentInfo: Stat<T>, next: Stat<T> | undefined) {
-        let index = targetParentInfo.children.length
-        if (next && next.parent === targetParentInfo.node) {
-          index = targetParentInfo.children.indexOf(next.node)
+      function getTargetIndex(targetParentStat: Stat<T> | null, next: Stat<T> | undefined) {
+        const siblingStats = targetParentStat ? targetParentStat.childStats : rootStats
+        let index = siblingStats.length
+        if (next && next.siblingStats === siblingStats) {
+          index = siblingStats.indexOf(next)
         }
         return index
       }
@@ -663,19 +679,38 @@ export const HeTree = <T extends Record<string, any>,>(props: ReturnType<typeof 
 }
 // utils methods ==================================
 
-export function* traverseTreeData<T>(
+export interface WalkTreeDataYield<T> {
+  node: T, parent: T | null, parents: T[], siblings: T[], index: number, skipChildren: VoidFunction,
+  // exitWalk: VoidFunction
+}
+
+export function* walkTreeData<T>(
   treeData: T[],
-  childrenKey = 'children',
-): Generator<{ node: T, parent: T | null, siblings: T[], index: number, skip: () => void }> {
+  childrenKey: string,
+  // handler?: (arg: WalkTreeDataYield<T>) => void,
+): Generator<WalkTreeDataYield<T>> {
   let _skipChildren = false
-  const skip = () => { _skipChildren = true }
-  yield* walk(treeData, null)
+  let _exit = false
+  const skipChildren = () => { _skipChildren = true }
+  // const exitWalk = () => { _exit = true }
+  // if (handler) {
+  //   for (const t of walk(treeData, null, [])) {
+  //     handler(t)
+  //   }
+  // }
+  yield* walk(treeData, null, [])
   // @ts-ignore
-  function* walk(arr: T[], parent: T | null) {
+  function* walk(arr: T[], parent: T | null, parents: T[]) {
     let index = 0
     for (const node of arr) {
       const siblings = arr
-      yield { node, parent, siblings, index, skip }
+      yield {
+        node, parent, parents, siblings, index, skipChildren,
+        // exitWalk 
+      }
+      if (_exit) {
+        return
+      }
       index++
       if (_skipChildren) {
         _skipChildren = false
@@ -683,15 +718,29 @@ export function* traverseTreeData<T>(
         // @ts-ignore
         const children: T[] = node[childrenKey]
         if (children) {
-          yield* walk(children, node)
+          yield* walk(children, node, [...parents, node])
         }
       }
     }
   }
 }
 
+export function* walkParents<T>(
+  node: T,
+  parentKeyOrGetter: string | ((node: T) => T | void | undefined | null),
+  options = { withSelf: false }
+) {
+  let cur = node
+  while (cur) {
+    if (cur !== node || options.withSelf) {
+      yield cur
+    }
+    // @ts-ignore
+    cur = typeof parentKeyOrGetter === 'function' ? parentKeyOrGetter(cur) : cur[parentKeyOrGetter];
+  }
+}
+
+// private methods
 function calculateDistance(x1: number, y1: number, x2: number, y2: number) {
   return Math.sqrt(Math.pow((x2 - x1), 2) + Math.pow((y2 - y1), 2));
 }
-
-
