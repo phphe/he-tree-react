@@ -283,10 +283,10 @@ export function useHeTree<T extends Record<string, any>>(
   const { stats, nodes, rootIds, rootStats, getStat, getDraft, nextData } = mainCache;
   // about drag ==================================
   const indent = props.indent!
-  const [draggedStat, setdraggedStat] = useState<Stat<T>>();
-  const [dragOverStat, setdragOverStat] = useState<Stat<T>>();
+  const [draggedStat, setDraggedStat] = useState<Stat<T>>();
+  const [dragOverStat, setDragOverStat] = useState<Stat<T>>();
   const virtualList = useRef<VirtualListHandle>(null);
-  const [placeholder, setplaceholder] = useState<{ parentStat: Stat<T> | null, level: number, index: number, height: number } | null>();
+  const [placeholder, setPlaceholder] = useState<{ parentStat: Stat<T> | null, level: number, index: number, height: number } | null>();
   const isExternal = !draggedStat
   const cacheForVisible = useMemo(
     () => {
@@ -386,8 +386,8 @@ export function useHeTree<T extends Record<string, any>>(
               e.dataTransfer.setDragImage(node, 0, 0);
             }
             setTimeout(() => {
-              setdraggedStat(stat)
-              setplaceholder({
+              setDraggedStat(stat)
+              setPlaceholder({
                 ...placeholder!,
                 parentStat: stat.parentStat,
                 level: stat.level,
@@ -449,7 +449,7 @@ export function useHeTree<T extends Record<string, any>>(
             let placeholderLevel = Math.ceil((e.pageX - nodeX) / indent) // use this number to detect placeholder position. >= 0: prepend. < 0: after.}
             placeholderLevel = hp.between(placeholderLevel, 0, (closest?.level || 0) + 1)
             if (!atTop && !isPlaceholder && closest.id === rootIds[0]) {
-              // chekc if at top
+              // check if at top
               const topNodeElement = listRoot.querySelector(`[data-key="${closest.id}"]`)
               if (topNodeElement) {
                 const rect = topNodeElement.getBoundingClientRect()
@@ -503,15 +503,15 @@ export function useHeTree<T extends Record<string, any>>(
                 // 
               }
             }
-            setplaceholder(newPlaceholder)
+            setPlaceholder(newPlaceholder)
             if (newPlaceholder) {
               e.preventDefault(); // call mean droppable
             }
-            !isPlaceholder && setdragOverStat(undefined)
+            !isPlaceholder && setDragOverStat(undefined)
             props.onDragOver?.(e, stat, isExternal)
           },
           onDragLeave(e) {
-            !isPlaceholder && setdragOverStat(undefined)
+            !isPlaceholder && setDragOverStat(undefined)
           },
         }
       }
@@ -528,7 +528,7 @@ export function useHeTree<T extends Record<string, any>>(
           return
         }
         if (getDroppable(null, 0)) {
-          setplaceholder({
+          setPlaceholder({
             ...placeholder!,
             parentStat: null,
             level: 1,
@@ -585,9 +585,9 @@ export function useHeTree<T extends Record<string, any>>(
         if (!customized) {
           e.preventDefault();
         }
-        setdragOverStat(undefined);
-        setdraggedStat(undefined);
-        setplaceholder(undefined);
+        setDragOverStat(undefined);
+        setDraggedStat(undefined);
+        setPlaceholder(undefined);
       }
       function getDroppable(stat: Stat<T> | null, index?: number): boolean {
         if (!stat) {
