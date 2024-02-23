@@ -1,9 +1,7 @@
 import "./HeTree.css";
 import React, { useEffect, useMemo, useState, useRef, ReactNode, useCallback, useImperativeHandle } from "react";
 import * as hp from "helper-js";
-import { VirtualList, VirtualListHandle, FixedForwardRef } from "./VirtualList";
-
-const forwardRef = React.forwardRef as FixedForwardRef
+import { VirtualList, VirtualListHandle } from "./VirtualList";
 
 // types ==================================
 export type Id = string | number
@@ -27,6 +25,8 @@ export interface Stat<T> {
   checked: Checked,
   draggable: boolean,
 }
+
+export type NodeAttrs = { 'data-key': string, 'data-level': string, 'data-node-box': boolean, 'data-drag-placeholder'?: boolean } & React.HTMLProps<HTMLDivElement>
 
 // single instance ==================================
 const dragOverInfo = {
@@ -52,28 +52,34 @@ export const defaultProps = {
   rootId: null as any,
 }
 
-export function useTree<T extends Record<string, any>>(
-  props0: {
-    data: T[],
-    isOpen?: (node: T) => boolean,
-    isChecked?: (node: T) => boolean | null,
-    isFunctionReactive?: boolean,
-    renderNode: (stat: Stat<T>) => ReactNode,
-    canDrag?: (stat: Stat<T>) => boolean | null | undefined | void,
-    canDrop?: (stat: Stat<T>, index?: number) => boolean | null | undefined | void,
-    canDropToRoot?: (index?: number) => boolean,
-    customDragImage?: (e: React.DragEvent<HTMLElement>, stat: Stat<T>) => void,
-    onDragStart?: (e: React.DragEvent<HTMLElement>, stat: Stat<T>) => void,
-    onDragOver?: (e: React.DragEvent<HTMLElement>, stat: Stat<T>, isExternal: boolean) => void,
-    onExternalDrag?: (e: React.DragEvent<HTMLElement>) => boolean,
-    onDrop?: (e: React.DragEvent<HTMLElement>, parentStat: Stat<T> | null, index: number, isExternal: boolean) => boolean | void,
-    onDragEnd?: (e: React.DragEvent<HTMLElement>, stat: Stat<T>, isOutside: boolean) => void,
-    onChange: (data: T[]) => void,
-    onDragOpen?: (stat: Stat<T>) => void,
-  } & Partial<typeof defaultProps>
+export interface HeTreeProps<T extends Record<string, any>> extends Partial<typeof defaultProps> {
+  data: T[],
+  isOpen?: (node: T) => boolean,
+  isChecked?: (node: T) => boolean | null,
+  isFunctionReactive?: boolean,
+  renderNode?: (stat: Stat<T>) => ReactNode,
+  renderNodeBox?: (info: { stat: Stat<T>, attrs: NodeAttrs, isPlaceholder: boolean }) => ReactNode,
+  canDrag?: (stat: Stat<T>) => boolean | null | undefined | void,
+  canDrop?: (stat: Stat<T>, index?: number) => boolean | null | undefined | void,
+  canDropToRoot?: (index?: number) => boolean,
+  customDragImage?: (e: React.DragEvent<HTMLElement>, stat: Stat<T>) => void,
+  onDragStart?: (e: React.DragEvent<HTMLElement>, stat: Stat<T>) => void,
+  onDragOver?: (e: React.DragEvent<HTMLElement>, stat: Stat<T>, isExternal: boolean) => void,
+  onExternalDrag?: (e: React.DragEvent<HTMLElement>) => boolean,
+  onDrop?: (e: React.DragEvent<HTMLElement>, parentStat: Stat<T> | null, index: number, isExternal: boolean) => boolean | void,
+  onDragEnd?: (e: React.DragEvent<HTMLElement>, stat: Stat<T>, isOutside: boolean) => void,
+  onChange: (data: T[]) => void,
+  onDragOpen?: (stat: Stat<T>) => void,
+}
+
+export function useHeTree<T extends Record<string, any>>(
+  props0: HeTreeProps<T>
 ) {
   const props = { ...defaultProps, ...props0 }
-  const { idKey: ID, parentIdKey: PID, childrenKey: CHILDREN, isFunctionReactive } = props
+  const { idKey: ID, parentIdKey: PID, childrenKey: CHILDREN, placeholderId, isFunctionReactive, } = props
+  if (!props.renderNode && !props.renderNodeBox) {
+    throw new Error("Either renderNodeBox or renderNode is required.");
+  }
   // mainCache ==================================
   const mainCache = useMemo(
     () => {
@@ -280,12 +286,12 @@ export function useTree<T extends Record<string, any>>(
   const [draggedStat, setdraggedStat] = useState<Stat<T>>();
   const [dragOverStat, setdragOverStat] = useState<Stat<T>>();
   const virtualList = useRef<VirtualListHandle>(null);
-  const [placeholder, setplaceholder] = useState<{ parentStat: Stat<T> | null, level: number, index: number, } | null>();
+  const [placeholder, setplaceholder] = useState<{ parentStat: Stat<T> | null, level: number, index: number, height: number } | null>();
   const isExternal = !draggedStat
   const cacheForVisible = useMemo(
     () => {
       const visibleIds: Id[] = []
-      const attrsList: (React.HTMLProps<HTMLDivElement> & { 'data-key': string, 'data-level': string, 'data-node-box': boolean, 'data-drag-placeholder'?: boolean })[] = [];
+      const attrsList: NodeAttrs[] = [];
       for (const { node: stat, skipChildren } of walkTreeData(rootStats, 'childStats')) {
         const attr = createAttrs(stat)
         if (stat === draggedStat) {
@@ -333,10 +339,10 @@ export function useTree<T extends Record<string, any>>(
         // get placeholder's index in visibleIds
         const indexInVisible = toIndexInVisible(placeholder.parentStat, placeholder.index)
         // 
-        visibleIds.splice(indexInVisible, 0, props.placeholderId)
+        visibleIds.splice(indexInVisible, 0, placeholderId)
         // @ts-ignore
         const placeholderAttrs = createAttrs({
-          id: props.placeholderId,
+          id: placeholderId,
           level: placeholder.level,
         }, true)
         placeholderAttrs['data-drag-placeholder'] = true
@@ -371,18 +377,18 @@ export function useTree<T extends Record<string, any>>(
             e.dataTransfer!.setData("text", "he-tree"); // set data to work in Chrome Android
             // TODO 拖拽类型识别
             e.dataTransfer!.dropEffect = 'move'
+            const nodeBox = hp.findParent(e.target as HTMLElement, (el) => el.hasAttribute('data-node-box'), { withSelf: true })
             if (props.customDragImage) {
               props.customDragImage(e, stat)
             } else {
               // setDragImage
-              let cur = e.target as HTMLElement
-              const nodeBox = hp.findParent(cur, (el) => el.hasAttribute('data-node-box'), { withSelf: true })
               const node = nodeBox.children[0]
               e.dataTransfer.setDragImage(node, 0, 0);
             }
             setTimeout(() => {
               setdraggedStat(stat)
               setplaceholder({
+                ...placeholder!,
                 parentStat: stat.parentStat,
                 level: stat.level,
                 index: (stat.parentStat?.childIds || rootIds).indexOf(stat.id),
@@ -437,9 +443,9 @@ export function useTree<T extends Record<string, any>>(
             let { atTop } = t
             const listRoot = virtualList.current!.getRootElement()
             // @ts-ignore
-            const nodeBoxEl = hp.findParent(e.target, (el) => el.hasAttribute('data-node-box'), { withSelf: true })
+            const nodeBox = hp.findParent(e.target, (el) => el.hasAttribute('data-node-box'), { withSelf: true })
             // node start position
-            const nodeX = nodeBoxEl.getBoundingClientRect().x
+            const nodeX = nodeBox.getBoundingClientRect().x
             let placeholderLevel = Math.ceil((e.pageX - nodeX) / indent) // use this number to detect placeholder position. >= 0: prepend. < 0: after.}
             placeholderLevel = hp.between(placeholderLevel, 0, (closest?.level || 0) + 1)
             if (!atTop && !isPlaceholder && closest.id === rootIds[0]) {
@@ -457,6 +463,7 @@ export function useTree<T extends Record<string, any>>(
             let newPlaceholder: typeof placeholder
             if (atTop) {
               newPlaceholder = {
+                ...placeholder!,
                 parentStat: null,
                 level: 1,
                 index: 0,
@@ -487,6 +494,7 @@ export function useTree<T extends Record<string, any>>(
               }
               if (placeholderPosition) {
                 newPlaceholder = {
+                  ...placeholder!,
                   parentStat: placeholderPosition.parentStat,
                   level: (placeholderPosition.parentStat?.level ?? 0) + 1,
                   index: placeholderPosition.index,
@@ -521,6 +529,7 @@ export function useTree<T extends Record<string, any>>(
         }
         if (getDroppable(null, 0)) {
           setplaceholder({
+            ...placeholder!,
             parentStat: null,
             level: 1,
             index: 0,
@@ -600,7 +609,7 @@ export function useTree<T extends Record<string, any>>(
         let closest = stat
         let index = visibleIds.indexOf(stat.id) // index of closest node
         let atTop = false
-        const isPlaceholderOrDraggedNode = (id: Id) => id === props.placeholderId || getStat(id) === draggedStat
+        const isPlaceholderOrDraggedNode = (id: Id) => id === placeholderId || getStat(id) === draggedStat
         const find = (startIndex: number, step: number) => {
           let i = startIndex, cur
           do {
@@ -642,41 +651,56 @@ export function useTree<T extends Record<string, any>>(
     // watch placeholder position
     placeholder?.parentStat, placeholder?.index,
     // watch props
-    indent, props.placeholderId,
+    indent, placeholderId,
     // watch func
     ...([props.canDrop, props.canDropToRoot, props.customDragImage, props.onDragStart, props.onDragOver, props.onExternalDrag, props.onDrop, props.onDragEnd, props.onChange].map(func => isFunctionReactive && func)),
   ])
+  const { visibleIds, attrsList, onDragOverRoot, onDropToRoot } = cacheForVisible
+  const persistentIndices = useMemo(() => draggedStat ? [visibleIds.indexOf(draggedStat.id)] : [], [draggedStat, visibleIds]);
+  const renderHeTree = useMemo(
+    () => {
+      let cached: ReactNode
+      return () => {
+        if (!cached) {
+          let renderNodeBox = props.renderNodeBox!
+          if (!renderNodeBox) {
+            renderNodeBox = ({ stat, attrs, isPlaceholder }) => <div {...attrs}>
+              {isPlaceholder ? <div></div> : props.renderNode!(stat)}
+            </div>
+          }
+          // 
+          cached = (
+            <div className="he-tree" onDragOver={onDragOverRoot} onDrop={onDropToRoot}>
+              <VirtualList<Id> ref={virtualList} items={visibleIds} virtual={false} persistentIndices={persistentIndices}
+                renderItem={(id, index) => renderNodeBox({
+                  stat: getStat(id)!, attrs: attrsList[index], isPlaceholder: id === placeholderId
+                })}
+              />
+            </div>
+          )
+        }
+        return cached
+      }
+    }, [cacheForVisible.visibleIds,
+    isFunctionReactive && props.renderNode,
+    isFunctionReactive && props.renderNodeBox,
+  ]);
+
   return {
-    ...mainCache, ...cacheForVisible,
+    ...mainCache,
+    // 
+    visibleIds, attrsList,
+    // ref
     virtualList,
     // drag states
     draggedStat, dragOverStat, placeholder, isExternal,
+    // render
+    renderHeTree,
   }
 }
 
 // react components ==================================
-export const HeTree = <T extends Record<string, any>,>(props: ReturnType<typeof useTree<T>>) => {
-  const { draggedStat, visibleIds } = props
-  const persistentIndices = useMemo(() => draggedStat ? [visibleIds.indexOf(draggedStat.id)] : [], [draggedStat, visibleIds]);
-  // const renderPlaceholder = (info: TreeNodeInfo<T>) => {
-  //   return <div className="tree-drag-placeholder" ></div>
-  // }
-  // 
-  return (
-    <div className="he-tree" onDragOver={props.onDragOverRoot} onDrop={props.onDropToRoot}>
-      <VirtualList<Id> ref={props.virtualList} items={props.visibleIds} virtual={false} persistentIndices={persistentIndices}
-        renderItem={(id, index) => (
-          <div {...props.attrsList[index]}>
-            {
-              id === '__DRAG_PLACEHOLDER__' ? <div className="tree-drag-placeholder" ></div> :
-                <div>{props.getStat(id).node.name}-{props.getStat(id).level}-{id}</div>
-            }
-          </div>
-        )}
-      />
-    </div>
-  )
-}
+// no components
 // utils methods ==================================
 
 export interface WalkTreeDataYield<T> {

@@ -3,9 +3,6 @@ import React, {
   useMemo, useRef, ReactNode, useLayoutEffect, useImperativeHandle
 } from 'react';
 
-export type OptionalKeys<T> = {
-  [K in keyof T]?: T[K];
-};
 // fix forwardRef type for generic types. refer: https://stackoverflow.com/questions/58469229/react-with-typescript-generics-while-using-react-forwardref
 export type FixedForwardRef = < T, P = {} > (
   render: (props: P, ref: React.Ref<T>) => React.ReactElement | null,
@@ -40,7 +37,7 @@ export type VirtualListProps<ITEM> = {
   /**
    * listen to scroll event.
    */
-  onScroll?: typeof document.onscroll,
+  onScroll?: React.UIEventHandler<HTMLElement>,
   /**
    * Insert elements at the head. Recommended to only insert elements that do not take up space or take very little space, such as position absolute.
    */
@@ -51,7 +48,7 @@ export type VirtualListProps<ITEM> = {
   renderFoot?: () => ReactNode,
   className?: string,
   style?: React.CSSProperties,
-} & OptionalKeys<typeof defaultProps>
+} & Partial<typeof defaultProps>
 
 export const defaultProps = {
   /**
@@ -66,25 +63,25 @@ export const defaultProps = {
 
 export interface VirtualListHandle {
   scrollToIndex(index: number, block?: 'start' | 'end' | 'center' | 'nearest'): void
-  forceUpdate(): void
   getRootElement(): HTMLElement
+  forceUpdate(): void
 }
 
 export const VirtualList = forwardRef(function <ITEM>(
   props: VirtualListProps<ITEM>,
   ref: React.ForwardedRef<VirtualListHandle>
 ) {
-  const [itemSize, setitemSize] = useState(props.itemSize || 100);
+  const [itemSize, setItemSize] = useState(props.itemSize || 100);
   const buffer = useMemo(() => props.buffer || Math.max(itemSize * 5, 100), [props.buffer, itemSize]);
   const count = props.items.length
   const list = useRef<HTMLDivElement>(null);
   const listInner = useRef<HTMLDivElement>(null);
   const prevScrollTop = useRef(0);
   const scrollToIndexRef = useRef<{ index: number, block: string }>();
-  const [shouldScrollToIndex, setshouldScrollToIndex] = useState([]);
-  const [scrollTop, setscrollTop] = useState(0);
-  const [listSize, setlistSize] = useState(props.listSize!);
-  const [forceRerender, setforceRerender] = useState([]); // change value to force rerender
+  const [shouldScrollToIndex, setShouldScrollToIndex] = useState([]);
+  const [scrollTop, setScrollTop] = useState(0);
+  const [listSize, setListSize] = useState(props.listSize!);
+  const [forceRerender, setForceRerender] = useState([]); // change value to force rerender
   const ignoreUpdateScrollTopOnce = useRef(false);
   // 
   const mainCache = useMemo(() => {
@@ -130,23 +127,28 @@ export const VirtualList = forwardRef(function <ITEM>(
   }
 
   useLayoutEffect(() => {
-    setlistSize(list.current!.clientHeight)
+    setListSize(list.current!.clientHeight)
     // get avg item size
     if (props.itemSize == null) {
+      // get gap
+      const listInnerEl = listInner.current as HTMLElement
+      let gap = parseFloat(getComputedStyle(listInnerEl).rowGap)
+      gap = isNaN(gap) ? 0 : gap
+      // 
       let count = 0
       let totalHeight = 0
       const persistentIndices = new Set(props.persistentIndices || [])
       let i = -1
-      for (const el of listInner.current!.children) {
+      for (const el of listInnerEl.children) {
         i++
         if (persistentIndices.has(visibleIndices[i])) {
           continue
         }
         const style = getComputedStyle(el)
-        totalHeight += (el as HTMLElement).offsetHeight + parseFloat(style.marginTop) + parseFloat(style.marginBottom)
+        totalHeight += (el as HTMLElement).offsetHeight + parseFloat(style.marginTop) + parseFloat(style.marginBottom) + gap
         count++
       }
-      setitemSize(totalHeight / count)
+      setItemSize(totalHeight / count)
     }
   }, [props.itemSize, props.items, forceRerender]);
   //
@@ -159,14 +161,14 @@ export const VirtualList = forwardRef(function <ITEM>(
       return
     }
 
-    setlistSize(list.current!.clientHeight)
+    setListSize(list.current!.clientHeight)
 
     if (ignoreUpdateScrollTopOnce.current) {
       ignoreUpdateScrollTopOnce.current = false
     } else {
       const scrollTop = list.current!.scrollTop;
       if (Math.abs(prevScrollTop.current - scrollTop) > (props.triggerDistance ?? itemSize)) {
-        setscrollTop(scrollTop)
+        setScrollTop(scrollTop)
         prevScrollTop.current = scrollTop
       }
     }
@@ -182,15 +184,15 @@ export const VirtualList = forwardRef(function <ITEM>(
       }
       const scrollTop = index * itemSize // estimated value
       list.current!.scrollTop = scrollTop
-      setscrollTop(scrollTop)
+      setScrollTop(scrollTop)
       prevScrollTop.current = scrollTop
-      setshouldScrollToIndex([]) // ensure re-render but exclude itemSize. setforceRerender will re calculate avg itemSize, so don't use it here.
-    },
-    forceUpdate() {
-      setforceRerender([])
+      setShouldScrollToIndex([]) // ensure re-render but exclude itemSize. setForceRerender will re calculate avg itemSize, so don't use it here.
     },
     getRootElement() {
       return list.current!
+    },
+    forceUpdate() {
+      setForceRerender([])
     },
   }), [itemSize]);
   // scrollToIndex
@@ -207,6 +209,17 @@ export const VirtualList = forwardRef(function <ITEM>(
       }
     }
   }, [shouldScrollToIndex])
+  // use ResizeObserver listen list size change
+  useLayoutEffect(() => {
+    const { ResizeObserver } = window
+    const observer = ResizeObserver && new ResizeObserver(() => {
+      setListSize(list.current!.clientHeight)
+    })
+    observer.observe(list.current as HTMLElement)
+    return () => {
+      observer?.disconnect()
+    }
+  }, [])
   // 
   return <div ref={list} onScroll={handleScroll} className={props.className} style={{ overflow: 'auto', ...props.style }}>
     {props.renderHead?.()}

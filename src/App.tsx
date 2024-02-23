@@ -1,5 +1,5 @@
 import example_data from "./examples/example_data.json";
-import { useTree, HeTree, traverseTreeData } from "../lib/index";
+import { useHeTree } from "../lib/index";
 import { useState } from "react";
 function App() {
   // const [flatData, setflatData] = useState(() => {
@@ -114,13 +114,14 @@ function App() {
     { "id": 100, "pid": 50, "name": "Black Holes" },
     { "id": 101, "pid": 50, "name": "Wormholes" }
   ]);
-  const t = useTree({
+  const t = useHeTree({
     data: flatData,
     dataType: 'flat',
-    renderNode: ({ node }) => <div>{node.text}</div>,
+    renderNode: ({ node }) => <div>{node?.name}</div>,
     onChange: setflatData,
     parentIdKey: 'pid',
   })
+
   // const renderNode = ({ node, dragOvering, setOpen, setChecked, draggable, onDragStart }) => <div>
   //   <div>
   //     <button draggable={draggable} onDragStart={onDragStart}>x</button>
@@ -137,8 +138,7 @@ function App() {
       </div>
       <div className='grid grid-cols-3 gap-4'>
         <div>
-          <HeTree {...t} />
-          {/* <HeTree treeData={treeData} renderNode={renderNode} foldable={true} customDragTrigger={true} onChange={settreeData} /> */}
+          {t.renderHeTree()}
         </div>
         <div>
         </div>

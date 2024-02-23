@@ -1,4 +1,4 @@
-.tree-drag-placeholder{
+[data-drag-placeholder] > div {
   height: 20px;
   border: 1px dashed blue;
 }
