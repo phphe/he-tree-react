@@ -657,6 +657,7 @@ export function useHeTree<T extends Record<string, any>>(
   ])
   const { visibleIds, attrsList, onDragOverRoot, onDropToRoot } = cacheForVisible
   const persistentIndices = useMemo(() => draggedStat ? [visibleIds.indexOf(draggedStat.id)] : [], [draggedStat, visibleIds]);
+  // render
   const renderHeTree = useMemo(
     () => {
       let cached: ReactNode
