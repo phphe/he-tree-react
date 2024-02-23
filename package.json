@@ -60,6 +60,7 @@
     "react-test-renderer": "^18.2.0",
     "typescript": "^5.2.2",
     "unocss": "^0.58.4",
+    "use-immer": "^0.9.0",
     "vite": "^5.0.8",
     "vite-plugin-dts": "^3.7.2",
     "vitest": "^1.3.1"
