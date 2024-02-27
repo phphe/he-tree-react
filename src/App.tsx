@@ -1,6 +1,7 @@
 import example_data from "./examples/example_data.json";
-import { useHeTree } from "../lib/index";
+import { sortFlatData, useHeTree } from "../lib/index";
 import { useState } from "react";
+import { useImmer } from "use-immer";
 function App() {
   // const [flatData, setflatData] = useState(() => {
   //   const list: (typeof example_data)[] = [];
@@ -11,7 +12,7 @@ function App() {
   //   }
   //   return list
   // });
-  const [flatData, setflatData] = useState(() => [
+  const [flatData, setflatData] = useImmer(() => sortFlatData([
     { "id": 1, "pid": null, "name": "Root Category" },
     { "id": 2, "pid": 1, "name": "Technology" },
     { "id": 5, "pid": 2, "name": "Hardware" },
@@ -113,13 +114,63 @@ function App() {
     { "id": 99, "pid": 49, "name": "Geostationary Orbit" },
     { "id": 100, "pid": 50, "name": "Black Holes" },
     { "id": 101, "pid": 50, "name": "Wormholes" }
-  ]);
+  ], 'id', 'pid'));
+  const toggleOpen = (id) => {
+    // setflatData(draft => {
+    //   let x = draft.find(v => v.id === node.id)
+    //   x.open = !x.open
+    // })
+    // let a = new Set(openIds)
+    // if (a.has(id)) {
+    //   a.delete(id)
+    // } else {
+    //   a.add(id)
+    // }
+    // setopenIds([...a])
+  }
+  let stop = false
+  function* aaa() {
+    for (const a of [4, 5]) {
+      yield a;
+      if (stop) {
+        return
+      }
+      yield* b()
+    }
+    function* b() {
+      yield 6
+      yield 7
+    }
+  }
+  for (const a of aaa()) {
+    console.log(a);
+    if (a === 4) {
+      stop = true
+    }
+  }
+  const toggleCheck = (id) => {
+    let a = new Set(checkedIds)
+    if (a.has(id)) {
+      a.delete(id)
+    } else {
+      a.add(id)
+    }
+    setcheckedIds([...a])
+  }
+  const [openIds, setopenIds] = useState([1, 2, 4]);
+  const [checkedIds, setcheckedIds] = useState([4]);
   const t = useHeTree({
     data: flatData,
     dataType: 'flat',
-    renderNode: ({ node }) => <div>{node?.name}</div>,
+    renderNode: ({ id, node, open, checked }) => <div>
+      <button onClick={() => { toggleOpen(id) }}>{open ? '-' : '+'}</button>
+      <input type="checkbox" checked={Boolean(checked)} onChange={() => { toggleCheck(id) }} />
+      {node?.name}
+    </div>,
     onChange: setflatData,
     parentIdKey: 'pid',
+    openIds,
+    checkedIds,
   })
 
   // const renderNode = ({ node, dragOvering, setOpen, setChecked, draggable, onDragStart }) => <div>

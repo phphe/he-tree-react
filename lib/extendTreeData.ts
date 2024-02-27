@@ -120,7 +120,12 @@ export function extendTreeData<T extends Record<string, any>>(
   }
   const afterChildrenChanged = (node: T | null) => {
     // const children = node? node[CHILDREN] : treeData;
-    const oldStat = 
   };
   return {};
+}
+
+export function useTreeData(data) {
+  function getStat(id: string | null | undefined | void) {}
+  getStat();
+  updateData((draft) => {});
 }
