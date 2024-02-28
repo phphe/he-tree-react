@@ -226,7 +226,7 @@ test("removeByIdInFlatData", () => {
   expect(cur.length).toBe(4);
   //
   cur = [...data];
-  removeByIdInFlatData(cur, 5)
+  removeByIdInFlatData(cur, 5);
   expect(cur.length).toBe(7);
   //
   cur = createData("key");
@@ -249,31 +249,48 @@ test("openParentsInFlatData", () => {
 test("updateCheckedInFlatData", () => {
   let data = createData();
   let cur = [...data];
-  let ids = [3];
-  let [newIds, semi,all] = updateCheckedInFlatData(cur,ids,[], true);
-  expect(newIds.toString()).toBe("3");
-  // 
-  [newIds, semi] = updateCheckedInFlatData(cur,ids,[3], true);
+  let ids = [7];
+  let [newIds, semi] = updateCheckedInFlatData(cur, ids, [], true);
+  expect(newIds.toString()).toBe("7");
+  // invalid 3 will be removed
+  [newIds, semi] = updateCheckedInFlatData(cur, [3], [], true);
+  expect(newIds.toString()).toBe("");
+  //
+  [newIds, semi] = updateCheckedInFlatData(cur, ids, [3], true);
   expect(newIds.toString()).toBe("3,6,7");
   expect(semi.toString()).toBe("1");
-  // 
-  [newIds, semi] = updateCheckedInFlatData(cur,[],[8,10], true);
+  //
+  [newIds, semi] = updateCheckedInFlatData(cur, [], [8, 10], true);
   expect(newIds.toString()).toBe("10,2,4,5,8");
   expect(semi.toString()).toBe("1");
   // uncheck
-  [newIds, semi, all] = updateCheckedInFlatData(cur,[10,2,4,8,5],[8], false);
+  [newIds, semi] = updateCheckedInFlatData(cur, [10, 2, 4, 8, 5], [8], false);
   expect(newIds.toString()).toBe("10,5");
   expect(semi.toString()).toBe("1,2");
-  expect(all.toString()).toBe("1,10,2,5");
-  // 
-  [newIds, semi, all] = updateCheckedInFlatData(cur,[1,2,5,10,4,8,3,7,6],[6,7], !false);
+  //
+  [newIds, semi] = updateCheckedInFlatData(
+    cur,
+    [1, 2, 5, 10, 4, 8, 3, 7, 6],
+    [6, 7],
+    !false
+  );
   expect(newIds.length).toBe(9);
   expect(semi.length).toBe(0);
-  expect(all.length).toBe(9);
-  // 
-  [newIds, semi, all] = updateCheckedInFlatData(cur,[1,2,5,10,4,8,3,7,6],[6,7], false);
-  expect(semi.toString()).toBe('1');
-  
+  //
+  [newIds, semi] = updateCheckedInFlatData(
+    cur,
+    [1, 2, 5, 10, 4, 8, 3, 7, 6],
+    [6, 7],
+    false
+  );
+  expect(semi.toString()).toBe("1");
+  //
+  [newIds, semi] = updateCheckedInFlatData(cur, [2], [5], true);
+  expect(newIds.toString()).toBe("10,5");
+  //
+  [newIds, semi] = updateCheckedInFlatData(cur, [2, 5, 10, 4, 8], 4, false);
+  expect(newIds.toString()).toBe("10,5");
+  expect(semi.toString()).toBe("1,2");
 });
 
 function createData(id = "id", parent_id = "parent_id") {

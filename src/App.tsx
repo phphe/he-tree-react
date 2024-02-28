@@ -1,5 +1,5 @@
 import example_data from "./examples/example_data.json";
-import { sortFlatData, useHeTree } from "../lib/index";
+import { sortFlatData, useHeTree, updateCheckedInFlatData } from "../lib/HeTree";
 import { useState } from "react";
 import { useImmer } from "use-immer";
 
@@ -125,14 +125,9 @@ function App() {
     }
     setopenIds(ids)
   }
-  const toggleCheck = (id) => {
-    let a = new Set(checkedIds)
-    if (a.has(id)) {
-      a.delete(id)
-    } else {
-      a.add(id)
-    }
-    setcheckedIds([...a])
+  const toggleCheck = (id, checked) => {
+    let newIds = updateCheckedInFlatData(flatData, checkedIds, id, checked, { parentIdKey: 'pid' })[0];
+    setcheckedIds(newIds)
   }
   const [openIds, setopenIds] = useState([1, 2, 4]);
   const [checkedIds, setcheckedIds] = useState([4]);
@@ -141,7 +136,7 @@ function App() {
     dataType: 'flat',
     renderNode: ({ id, node, open, checked }) => <div>
       <button onClick={() => { updateOpen(id, !open) }}>{open ? '-' : '+'}</button>
-      <input type="checkbox" checked={Boolean(checked)} onChange={() => { toggleCheck(id) }} />
+      <input type="checkbox" checked={Boolean(checked)} onChange={() => { toggleCheck(id, !checked) }} />
       {node?.name}
     </div>,
     onChange: setflatData,

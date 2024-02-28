@@ -69,6 +69,7 @@ export interface HeTreeProps<T extends Record<string, any>> extends Partial<type
   onChange: (data: T[]) => void,
   openIds?: Id[],
   checkedIds?: Id[],
+  semiCheckedIds?: Id[],
 }
 
 export function useHeTree<T extends Record<string, any>>(
@@ -82,7 +83,10 @@ export function useHeTree<T extends Record<string, any>>(
   }
   const openIdsStr = useMemo(() => props.openIds ? [...props.openIds].sort().toString() : '', [props.openIds])
   const openIdSet = useMemo(() => new Set(props.openIds), [openIdsStr])
-  const checkedIdsStr = useMemo(() => props.checkedIds?.toString(), [props.checkedIds])
+  const checkedIdsStr = useMemo(() => props.checkedIds ? [...props.checkedIds].sort().toString() : '', [props.checkedIds])
+  const checkedIdSet = useMemo(() => new Set(props.checkedIds), [checkedIdsStr])
+  const semiCheckedIdStr = useMemo(() => props.semiCheckedIds ? [...props.semiCheckedIds].sort().toString() : '', [props.semiCheckedIds])
+  const semiCheckedIdSet = useMemo(() => new Set(props.semiCheckedIds), [semiCheckedIdStr])
   // mainCache ==================================
   const mainCache = useMemo(
     () => {
@@ -140,7 +144,7 @@ export function useHeTree<T extends Record<string, any>>(
           index,
           level,
           open: props.openIds ? openIdSet.has(id) : true,
-          checked: false,
+          checked: checkedIdSet.has(id) ? true : (semiCheckedIdSet.has(id) ? null : false),
           draggable: false,
         }
         stats[id] = stat
@@ -149,32 +153,6 @@ export function useHeTree<T extends Record<string, any>>(
         siblings.push(node)
         siblingStats.push(stat)
         count++
-      }
-      // checked
-      let allCheckedIds: Id[] = [];
-      let semiCheckedIds: Id[] = [];
-      if (props.checkedIds) {
-        for (const id of props.checkedIds) {
-          const stat = stats[id];
-          if (stat) {
-            stat.checked = true;
-            for (const [curStat] of walkTreeDataGenerator(stat.childStats, 'childStats')) {
-              curStat.checked = true;
-            }
-            for (const curStat of walkParentsGenerator(stat, 'parentStat', { withSelf: false })) {
-              let allChecked = true
-              let hasChecked = false
-              for (const child of curStat.childStats) {
-                if (child.checked) {
-                  hasChecked = true
-                } else {
-                  allChecked = false
-                }
-              }
-              curStat.checked = allChecked ? true : (hasChecked ? null : false)
-            }
-          }
-        }
       }
 
       // after stats ready
@@ -185,12 +163,6 @@ export function useHeTree<T extends Record<string, any>>(
           draggable = stat.parentStat ? stat.parentStat.draggable : true
         }
         stat.draggable = draggable
-        // checked
-        if (stat.checked) {
-          allCheckedIds.push(stat.id)
-        } else if (stat.checked === null) {
-          semiCheckedIds.push(stat.id)
-        }
       }
       const getStat = (idOrNodeOrStat: T | Stat<T> | Id) => {
         let id: Id
@@ -232,14 +204,12 @@ export function useHeTree<T extends Record<string, any>>(
       return {
         // root
         rootIds, rootNodes, rootStats,
-        // open & checked
-        allCheckedIds, semiCheckedIds,
         // methods
         getStat,
         getDraft,
         nextData,
       }
-    }, [props.data, props.dataType, ID, PID, openIdSet, checkedIdsStr, props.rootId,
+    }, [props.data, props.dataType, ID, PID, openIdSet, checkedIdSet, props.rootId,
     isFunctionReactive && props.canDrag,
   ]
   );
@@ -677,54 +647,6 @@ export function useHeTree<T extends Record<string, any>>(
     renderHeTree,
   }
 }
-
-// function getMapOfFlatData(params:type) {
-
-// }
-
-// function updateChecked<T extends Record<string, any>>(options: {
-//   data: T[],
-//   dataType: 'tree' | 'flat',
-//   checkedIds: Id[],
-//   idKey: 'id',
-//   parentIdKey: 'parentId',
-//   childrenKey: 'children',
-// }) {
-//   const { data, dataType, checkedIds, idKey: ID, parentIdKey: PID, childrenKey: CHILDREN } = options
-//   if (dataType === 'flat') {
-//     const byId: Record<Id, T> = {}
-//     const childrenById: Record<Id, T[]> = {}
-//     const rootChildren: T[] = [];
-//     for (const node of data) {
-//       const id = node[ID];
-//       byId[id] = node
-//       childrenById[id] = [];
-//       const pid = node[PID];
-//       (childrenById[pid] || rootChildren).push(node);
-//     }
-//     // 
-//     const newCheckedIds = new Set<Id>(checkedIds)
-//     const checked = false
-//     const changedIds: Id[] = [];
-//     const allChangedIds = new Set(changedIds)
-//     data.forEach((node) => {
-//       if (allChangedIds.has(node[PID])) {
-//         allChangedIds.add(node[ID])
-//       }
-//     })
-//   }
-//   let pids = new Set<Id>()
-//   let allCheckedIds = new Set<Id>(checkedIds)
-//   for (let id of checkedIds) {
-//     if (id in checkedIds) {
-//       allCheckedIds.add(id)
-//       pids.add(id)
-//     } else if (allCheckedIds.has(byid[id].pid)) {
-//       allCheckedIds.add(id)
-//       pids.add(id)
-//     }
-//   }
-// }
 // react components ==================================
 // no components
 // utils methods ==================================
@@ -1079,7 +1001,8 @@ export function updateCheckedInFlatData<T extends Record<Id, any>>(
   const changedPids = new Set<Id>(idsToUpdate)
   const pidById: Record<Id, Id | null> = {}
   const childIdsById = new Map<Id | null, Id[]>()
-  childIdsById.set(null, [])
+  const rootIds: Id[] = [];
+  childIdsById.set(null, rootIds)
   for (const [node, { parents, id, pid }] of walkFlatDataGenerator(flatData, options)) {
     pidById[id] = pid
     childIdsById.get(pid)!.push(id)
@@ -1091,22 +1014,42 @@ export function updateCheckedInFlatData<T extends Record<Id, any>>(
       changedPids.add(id)
     }
   }
-  // update parents
-  for (const id of idsToUpdate) {
-    let cur = pidById[id];
-    while (cur != null) {
-      let allChecked = true
-      let hasChecked = false
-      for (const childId of childIdsById.get(cur)!) {
-        if (all.get(childId) === false) {
-          allChecked = false
-        } else {
-          hasChecked = true
-        }
-      }
-      all.set(cur, allChecked ? true : (hasChecked ? null : false))
-      cur = pidById[cur]
+  // check from root to each nodes
+  const walk = (id: Id) => {
+    const childIds = childIdsById.get(id)
+    if (!childIds || childIds.length === 0) {
+      return all.get(id)
     }
+    let hasTrue = false
+    let hasFalse = false
+    let hasNull = false
+    for (const childId of childIds) {
+      let t = walk(childId)
+      if (t === false) {
+        hasFalse = true
+      } else if (t === null) {
+        hasNull = true
+        break
+      } else {
+        hasTrue = true
+      }
+    }
+    let checked: Checked
+    if (hasNull) {
+      checked = null
+    } else if (hasFalse && hasTrue) {
+      checked = null
+    } else if (hasFalse) {
+      checked = false
+    } else {
+      checked = true
+    }
+    all.set(id, checked)
+    return checked
+  }
+
+  for (const id of rootIds) {
+    walk(id)
   }
   const newCheckedIds: Id[] = [];
   const semiCheckedIds: Id[] = [];
@@ -1117,11 +1060,10 @@ export function updateCheckedInFlatData<T extends Record<Id, any>>(
       semiCheckedIds.push(k)
     }
   })
-  const allChecked = [...newCheckedIds, ...semiCheckedIds];
-  return [newCheckedIds.sort(), semiCheckedIds.sort(), allChecked.sort()]
+  return [newCheckedIds.sort(), semiCheckedIds.sort()]
 }
 export function updateCheckedInTreeData<T extends Record<Id, any>>(
-  flatData: T[],
+  treeData: T[],
   checkedIds: Id[],
   idOrIds: Id | Id[],
   checked: boolean,
@@ -1136,7 +1078,7 @@ export function updateCheckedInTreeData<T extends Record<Id, any>>(
   const pidById: Record<Id, Id | null> = {}
   const childIdsById = new Map<Id | null, Id[]>()
   childIdsById.set(null, [])
-  for (const [node, { parents, parent }] of walkTreeDataGenerator(flatData, CHILDREN)) {
+  for (const [node, { parents, parent }] of walkTreeDataGenerator(treeData, CHILDREN)) {
     const id = node[ID];
     const pid = parent?.[ID] ?? null
     pidById[id] = pid
@@ -1149,22 +1091,41 @@ export function updateCheckedInTreeData<T extends Record<Id, any>>(
       changedPids.add(id)
     }
   }
-  // update parents
-  for (const id of idsToUpdate) {
-    let cur = pidById[id];
-    while (cur != null) {
-      let allChecked = true
-      let hasChecked = false
-      for (const childId of childIdsById.get(cur)!) {
-        if (all.get(childId) === false) {
-          allChecked = false
-        } else {
-          hasChecked = true
-        }
-      }
-      all.set(cur, allChecked ? true : (hasChecked ? null : false))
-      cur = pidById[cur]
+  // check from root to each nodes
+  const walk = (id: Id) => {
+    const childIds = childIdsById.get(id)
+    if (!childIds || childIds.length === 0) {
+      return all.get(id)
     }
+    let hasTrue = false
+    let hasFalse = false
+    let hasNull = false
+    for (const childId of childIds) {
+      let t = walk(childId)
+      if (t === false) {
+        hasFalse = true
+      } else if (t === null) {
+        hasNull = true
+        break
+      } else {
+        hasTrue = true
+      }
+    }
+    let checked: Checked
+    if (hasNull) {
+      checked = null
+    } else if (hasFalse && hasTrue) {
+      checked = null
+    } else if (hasFalse) {
+      checked = false
+    } else {
+      checked = true
+    }
+    all.set(id, checked)
+    return checked
+  }
+  for (const node of treeData) {
+    walk(node[ID])
   }
   const newCheckedIds: Id[] = [];
   const semiCheckedIds: Id[] = [];
@@ -1175,8 +1136,7 @@ export function updateCheckedInTreeData<T extends Record<Id, any>>(
       semiCheckedIds.push(k)
     }
   })
-  const allChecked = [...newCheckedIds, ...semiCheckedIds];
-  return [newCheckedIds.sort(), semiCheckedIds.sort(), allChecked.sort()]
+  return [newCheckedIds.sort(), semiCheckedIds.sort()]
 }
 // private methods
 function calculateDistance(x1: number, y1: number, x2: number, y2: number) {

@@ -159,30 +159,48 @@ test("openParentsInTreeData", () => {
 test("updateCheckedInTreeData", () => {
   let data = createData2();
   let cur = [...data];
-  let ids = [3];
-  let [newIds, semi,all] = updateCheckedInTreeData(cur,ids,[], true);
-  expect(newIds.toString()).toBe("3");
-  // 
-  [newIds, semi] = updateCheckedInTreeData(cur,ids,[3], true);
+  let ids = [7];
+  let [newIds, semi] = updateCheckedInTreeData(cur, ids, [], true);
+  expect(newIds.toString()).toBe("7");
+  // invalid 3 will be removed
+  [newIds, semi] = updateCheckedInTreeData(cur, [3], [], true);
+  expect(newIds.toString()).toBe("");
+  //
+  [newIds, semi] = updateCheckedInTreeData(cur, ids, [3], true);
   expect(newIds.toString()).toBe("3,6,7");
   expect(semi.toString()).toBe("1");
-  // 
-  [newIds, semi] = updateCheckedInTreeData(cur,[],[8,10], true);
+  //
+  [newIds, semi] = updateCheckedInTreeData(cur, [], [8, 10], true);
   expect(newIds.toString()).toBe("10,2,4,5,8");
   expect(semi.toString()).toBe("1");
   // uncheck
-  [newIds, semi, all] = updateCheckedInTreeData(cur,[10,2,4,8,5],[8], false);
+  [newIds, semi] = updateCheckedInTreeData(cur, [10, 2, 4, 8, 5], [8], false);
   expect(newIds.toString()).toBe("10,5");
   expect(semi.toString()).toBe("1,2");
-  expect(all.toString()).toBe("1,10,2,5");
-  // 
-  [newIds, semi, all] = updateCheckedInTreeData(cur,[1,2,5,10,4,8,3,7,6],[6,7], !false);
+  //
+  [newIds, semi] = updateCheckedInTreeData(
+    cur,
+    [1, 2, 5, 10, 4, 8, 3, 7, 6],
+    [6, 7],
+    !false
+  );
   expect(newIds.length).toBe(9);
   expect(semi.length).toBe(0);
-  expect(all.length).toBe(9);
-  // 
-  [newIds, semi, all] = updateCheckedInTreeData(cur,[1,2,5,10,4,8,3,7,6],[6,7], false);
-  expect(semi.toString()).toBe('1');
+  //
+  [newIds, semi] = updateCheckedInTreeData(
+    cur,
+    [1, 2, 5, 10, 4, 8, 3, 7, 6],
+    [6, 7],
+    false
+  );
+  expect(semi.toString()).toBe("1");
+  //
+  [newIds, semi] = updateCheckedInTreeData(cur, [2], [5], true);
+  expect(newIds.toString()).toBe("10,5");
+  //
+  [newIds, semi] = updateCheckedInTreeData(cur, [2, 5, 10, 4, 8], 4, false);
+  expect(newIds.toString()).toBe("10,5");
+  expect(semi.toString()).toBe("1,2");
 });
 
 function createData() {
@@ -330,54 +348,54 @@ function createData2() {
   */
   return [
     {
-        "id": 1,
-        "name": "Root Category",
-        "children": [
+      id: 1,
+      name: "Root Category",
+      children: [
+        {
+          id: 2,
+          name: "Technology",
+          children: [
             {
-                "id": 2,
-                "name": "Technology",
-                "children": [
-                    {
-                        "id": 5,
-                        "name": "Hardware",
-                        "children": [
-                            {
-                                "id": 10,
-                                "name": "Computer Components",
-                                "children": []
-                            }
-                        ]
-                    },
-                    {
-                        "id": 4,
-                        "name": "Programming",
-                        "children": [
-                            {
-                                "id": 8,
-                                "name": "Python",
-                                "children": []
-                            }
-                        ]
-                    }
-                ]
+              id: 5,
+              name: "Hardware",
+              children: [
+                {
+                  id: 10,
+                  name: "Computer Components",
+                  children: [],
+                },
+              ],
             },
             {
-                "id": 3,
-                "name": "Science",
-                "children": [
-                    {
-                        "id": 7,
-                        "name": "Biology",
-                        "children": []
-                    },
-                    {
-                        "id": 6,
-                        "name": "Physics",
-                        "children": []
-                    }
-                ]
-            }
-        ]
-    }
-]
+              id: 4,
+              name: "Programming",
+              children: [
+                {
+                  id: 8,
+                  name: "Python",
+                  children: [],
+                },
+              ],
+            },
+          ],
+        },
+        {
+          id: 3,
+          name: "Science",
+          children: [
+            {
+              id: 7,
+              name: "Biology",
+              children: [],
+            },
+            {
+              id: 6,
+              name: "Physics",
+              children: [],
+            },
+          ],
+        },
+      ],
+    },
+  ];
 }
