@@ -1120,6 +1120,64 @@ export function updateCheckedInFlatData<T extends Record<Id, any>>(
   const allChecked = [...newCheckedIds, ...semiCheckedIds];
   return [newCheckedIds.sort(), semiCheckedIds.sort(), allChecked.sort()]
 }
+export function updateCheckedInTreeData<T extends Record<Id, any>>(
+  flatData: T[],
+  checkedIds: Id[],
+  idOrIds: Id | Id[],
+  checked: boolean,
+  options0?: Partial<typeof treeDataDefaultOptions>
+) {
+  const options = { ...treeDataDefaultOptions, ...options0 }
+  const { idKey: ID, childrenKey: CHILDREN } = options
+  const checkedIdSet = new Set(checkedIds)
+  const idsToUpdate = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
+  const all = new Map<Id, Checked>()
+  const changedPids = new Set<Id>(idsToUpdate)
+  const pidById: Record<Id, Id | null> = {}
+  const childIdsById = new Map<Id | null, Id[]>()
+  childIdsById.set(null, [])
+  for (const [node, { parents, parent }] of walkTreeDataGenerator(flatData, CHILDREN)) {
+    const id = node[ID];
+    const pid = parent?.[ID] ?? null
+    pidById[id] = pid
+    childIdsById.get(pid)!.push(id)
+    childIdsById.set(id, [])
+    all.set(id, checkedIdSet.has(id))
+    if (changedPids.has(id) || (pid && changedPids.has(pid))) {
+      // update self and children
+      all.set(id, checked)
+      changedPids.add(id)
+    }
+  }
+  // update parents
+  for (const id of idsToUpdate) {
+    let cur = pidById[id];
+    while (cur != null) {
+      let allChecked = true
+      let hasChecked = false
+      for (const childId of childIdsById.get(cur)!) {
+        if (all.get(childId) === false) {
+          allChecked = false
+        } else {
+          hasChecked = true
+        }
+      }
+      all.set(cur, allChecked ? true : (hasChecked ? null : false))
+      cur = pidById[cur]
+    }
+  }
+  const newCheckedIds: Id[] = [];
+  const semiCheckedIds: Id[] = [];
+  all.forEach((v, k) => {
+    if (v === true) {
+      newCheckedIds.push(k)
+    } else if (v === null) {
+      semiCheckedIds.push(k)
+    }
+  })
+  const allChecked = [...newCheckedIds, ...semiCheckedIds];
+  return [newCheckedIds.sort(), semiCheckedIds.sort(), allChecked.sort()]
+}
 // private methods
 function calculateDistance(x1: number, y1: number, x2: number, y2: number) {
   return Math.sqrt(Math.pow((x2 - x1), 2) + Math.pow((y2 - y1), 2));

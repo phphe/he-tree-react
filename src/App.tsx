@@ -2,6 +2,7 @@ import example_data from "./examples/example_data.json";
 import { sortFlatData, useHeTree } from "../lib/index";
 import { useState } from "react";
 import { useImmer } from "use-immer";
+
 function App() {
   // const [flatData, setflatData] = useState(() => {
   //   const list: (typeof example_data)[] = [];

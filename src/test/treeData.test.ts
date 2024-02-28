@@ -4,6 +4,7 @@ import {
   findTreeData,
   filterTreeData,
   openParentsInTreeData,
+  updateCheckedInTreeData,
 } from "../../lib/HeTree";
 
 test("walkTreeDataGenerator", () => {
@@ -155,6 +156,34 @@ test("openParentsInTreeData", () => {
   newOpenids = openParentsInTreeData(cur, [], "===================");
   expect(newOpenids.toString()).toBe("");
 });
+test("updateCheckedInTreeData", () => {
+  let data = createData2();
+  let cur = [...data];
+  let ids = [3];
+  let [newIds, semi,all] = updateCheckedInTreeData(cur,ids,[], true);
+  expect(newIds.toString()).toBe("3");
+  // 
+  [newIds, semi] = updateCheckedInTreeData(cur,ids,[3], true);
+  expect(newIds.toString()).toBe("3,6,7");
+  expect(semi.toString()).toBe("1");
+  // 
+  [newIds, semi] = updateCheckedInTreeData(cur,[],[8,10], true);
+  expect(newIds.toString()).toBe("10,2,4,5,8");
+  expect(semi.toString()).toBe("1");
+  // uncheck
+  [newIds, semi, all] = updateCheckedInTreeData(cur,[10,2,4,8,5],[8], false);
+  expect(newIds.toString()).toBe("10,5");
+  expect(semi.toString()).toBe("1,2");
+  expect(all.toString()).toBe("1,10,2,5");
+  // 
+  [newIds, semi, all] = updateCheckedInTreeData(cur,[1,2,5,10,4,8,3,7,6],[6,7], !false);
+  expect(newIds.length).toBe(9);
+  expect(semi.length).toBe(0);
+  expect(all.length).toBe(9);
+  // 
+  [newIds, semi, all] = updateCheckedInTreeData(cur,[1,2,5,10,4,8,3,7,6],[6,7], false);
+  expect(semi.toString()).toBe('1');
+});
 
 function createData() {
   // return example tree data
@@ -283,4 +312,72 @@ function createData() {
       text: "Download",
     },
   ];
+}
+
+function createData2() {
+  // same to flatData.test
+  // size 9
+  /* structure
+  1
+    2
+      5
+        10
+      4
+        8
+    3
+      7
+      6
+  */
+  return [
+    {
+        "id": 1,
+        "name": "Root Category",
+        "children": [
+            {
+                "id": 2,
+                "name": "Technology",
+                "children": [
+                    {
+                        "id": 5,
+                        "name": "Hardware",
+                        "children": [
+                            {
+                                "id": 10,
+                                "name": "Computer Components",
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "id": 4,
+                        "name": "Programming",
+                        "children": [
+                            {
+                                "id": 8,
+                                "name": "Python",
+                                "children": []
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": 3,
+                "name": "Science",
+                "children": [
+                    {
+                        "id": 7,
+                        "name": "Biology",
+                        "children": []
+                    },
+                    {
+                        "id": 6,
+                        "name": "Physics",
+                        "children": []
+                    }
+                ]
+            }
+        ]
+    }
+]
 }
