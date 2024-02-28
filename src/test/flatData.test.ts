@@ -124,13 +124,30 @@ test("walkFlatDataGenerator: exitWalk", () => {
 });
 test("walkFlatData", () => {
   let data = createData();
-  walkFlatData(data, (node, { treeIndex, parent, index, parents }) => {
-    if (treeIndex === 0) {
-      expect(parent).toBe(null);
-      expect(JSON.stringify(parents)).toBe("[]");
-      expect(node.id).toBe(1);
+  walkFlatData(
+    data,
+    (node, { treeIndex, parent, index, parents, exitWalk }) => {
+      if (treeIndex === 0) {
+        expect(parent).toBe(null);
+        expect(JSON.stringify(parents)).toBe("[]");
+        expect(node.id).toBe(1);
+        exitWalk();
+      }
     }
-  });
+  );
+});
+test("walkFlatData: id, pid", () => {
+  let data = createData();
+  walkFlatData(
+    data,
+    (node, { treeIndex, parent, index, parents, exitWalk, id, pid }) => {
+      if (treeIndex === 2) {
+        expect(id).toBe(5);
+        expect(pid).toBe(2);
+        exitWalk();
+      }
+    }
+  );
 });
 test("walkFlatData: options", () => {
   let data = createData("key", "pid");

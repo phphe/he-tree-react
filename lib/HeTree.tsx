@@ -851,7 +851,7 @@ const flatDataDefaultOptions = {
   parentIdKey: 'parent_id',
 }
 export type WalkFlatDataYield<T> = [T, {
-  parent: T | null, parents: T[], index: number, treeIndex: number, skipChildren: VoidFunction, exitWalk: VoidFunction
+  parent: T | null, parents: T[], index: number, treeIndex: number, id: Id, pid: Id, skipChildren: VoidFunction, exitWalk: VoidFunction
 }]
 export function* walkFlatDataGenerator<T extends Record<Id, any>>(flatData: T[], options0?: Partial<typeof flatDataDefaultOptions>): Generator<WalkFlatDataYield<T>> {
   const options = { ...flatDataDefaultOptions, ...options0 }
@@ -879,6 +879,8 @@ export function* walkFlatDataGenerator<T extends Record<Id, any>>(flatData: T[],
       parent,
       parents: parent ? [...stats[pid]!.parents, parent] : [],
       index,
+      id,
+      pid,
       treeIndex,
       skipChildren,
       exitWalk,
