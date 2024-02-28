@@ -67,11 +67,7 @@ export interface HeTreeProps<T extends Record<string, any>> extends Partial<type
   onDrop?: (e: React.DragEvent<HTMLElement>, parentStat: Stat<T> | null, index: number, isExternal: boolean) => boolean | void,
   onDragEnd?: (e: React.DragEvent<HTMLElement>, stat: Stat<T>, isOutside: boolean) => void,
   onChange: (data: T[]) => void,
-  dragOpen?: boolean,
-  // onDragOpen?: (stat: Stat<T>) => void,
   openIds?: Id[],
-  autoOpenParent?: boolean,
-  onOpenIdsChange?: (ids: Id[]) => void,
   checkedIds?: Id[],
 }
 
@@ -80,10 +76,12 @@ export function useHeTree<T extends Record<string, any>>(
 ) {
   const props = { ...defaultProps, ...props0 }
   const { idKey: ID, parentIdKey: PID, childrenKey: CHILDREN, placeholderId, isFunctionReactive, } = props
+  const flatOpt = { idKey: ID, parentIdKey: PID } // shared options for flat data
   if (!props.renderNode && !props.renderNodeBox) {
     throw new Error("Either renderNodeBox or renderNode is required.");
   }
-  const openIdsStr = useMemo(() => props.openIds?.toString(), [props.openIds])
+  const openIdsStr = useMemo(() => props.openIds ? [...props.openIds].sort().toString() : '', [props.openIds])
+  const openIdSet = useMemo(() => new Set(props.openIds), [openIdsStr])
   const checkedIdsStr = useMemo(() => props.checkedIds?.toString(), [props.checkedIds])
   // mainCache ==================================
   const mainCache = useMemo(
@@ -106,7 +104,6 @@ export function useHeTree<T extends Record<string, any>>(
         }
       }
       let count = 0
-      const openIdSet = new Set(props.openIds)
       for (const node of simpleWalk()) {
         const id: Id = node[ID] ?? count
         const pid = node[PID] as Id
@@ -125,7 +122,7 @@ export function useHeTree<T extends Record<string, any>>(
           siblings = parentStat.children
           siblingStats = parentStat.childStats
         }
-        const index = siblingIds.indexOf(id)
+        const index = siblingIds.length
         const level = parentStat?.level + 1 || 1
         const stat = {
           _isStat: true,
@@ -148,31 +145,10 @@ export function useHeTree<T extends Record<string, any>>(
         }
         stats[id] = stat
         nodes[id] = node
-        if (parentStat) {
-          parentStat.childIds.push(id)
-          parentStat.children.push(node)
-          parentStat.childStats.push(stat)
-        } else {
-          rootIds.push(id)
-          rootNodes.push(node)
-          rootStats.push(stat)
-        }
+        siblingIds.push(id)
+        siblings.push(node)
+        siblingStats.push(stat)
         count++
-      }
-      // open
-      let allOpenIds: Id[] | null = null;
-      if (props.openIds) {
-        allOpenIds = [];
-        if (props.autoOpenParent) {
-          for (const id of props.openIds) {
-            const stat = stats[id];
-            if (stat) {
-              for (const curStat of walkParentsGenerator(stat, 'parentStat', { withSelf: false })) {
-                curStat.open = true
-              }
-            }
-          }
-        }
       }
       // checked
       let allCheckedIds: Id[] = [];
@@ -209,8 +185,6 @@ export function useHeTree<T extends Record<string, any>>(
           draggable = stat.parentStat ? stat.parentStat.draggable : true
         }
         stat.draggable = draggable
-        // open
-        stat.open && allOpenIds?.push(stat.id)
         // checked
         if (stat.checked) {
           allCheckedIds.push(stat.id)
@@ -259,13 +233,13 @@ export function useHeTree<T extends Record<string, any>>(
         // root
         rootIds, rootNodes, rootStats,
         // open & checked
-        allOpenIds, allCheckedIds, semiCheckedIds,
+        allCheckedIds, semiCheckedIds,
         // methods
         getStat,
         getDraft,
         nextData,
       }
-    }, [props.data, props.dataType, ID, PID, openIdsStr, checkedIdsStr, props.autoOpenParent, props.rootId,
+    }, [props.data, props.dataType, ID, PID, openIdSet, checkedIdsStr, props.rootId,
     isFunctionReactive && props.canDrag,
   ]
   );
@@ -538,37 +512,52 @@ export function useHeTree<T extends Record<string, any>>(
           }
           if (!customized && !isExternal) {
             // move node
-            const draft = getDraft()
-            let draggedSiblings: T[], targetSiblings: T[]
-            if (!placeholder.parentStat) {
-              targetSiblings = draft
-            }
-            let draggedNodeDraft: T
-            for (const [node, { siblings }] of walkTreeDataGenerator(draft, CHILDREN)) {
-              if (node[ID] === draggedStat.id) {
-                draggedSiblings = siblings
-                draggedNodeDraft = node
+            // const draft = getDraft()
+            // let draggedSiblings: T[], targetSiblings: T[]
+            // if (!placeholder.parentStat) {
+            //   targetSiblings = draft
+            // }
+            // let draggedNodeDraft: T
+            // for (const [node, { siblings }] of walkTreeDataGenerator(draft, CHILDREN)) {
+            //   if (node[ID] === draggedStat.id) {
+            //     draggedSiblings = siblings
+            //     draggedNodeDraft = node
+            //   }
+            //   if (!targetSiblings! && node[ID] === placeholder.parentStat!.id) {
+            //     targetSiblings = node[CHILDREN]
+            //   }
+            //   if (draggedSiblings! && targetSiblings!) {
+            //     break
+            //   }
+            // }
+            // const ds = draggedSiblings!
+            // const ts = targetSiblings!
+            // const startIndex = ds.findIndex(v => v[ID] === draggedStat.id)
+            // let targetIndex = placeholder.index
+            // // check index
+            // if (ds === ts && placeholder.index > startIndex) {
+            //   targetIndex -= 1
+            // }
+            // // remove from start position
+            // ds.splice(startIndex, 1)
+            // // move to target position
+            // ts.splice(targetIndex, 0, draggedNodeDraft!)
+            // props.onChange(nextData())
+            if (props.dataType === 'flat') {
+              const startIndex = props.data.findIndex(v => v[ID] === draggedStat.id)
+              let targetIndexInSiblings = placeholder.index
+              if (placeholder.parentStat === draggedStat.parentStat && draggedStat.index < targetIndexInSiblings) {
+                targetIndexInSiblings--
               }
-              if (!targetSiblings! && node[ID] === placeholder.parentStat!.id) {
-                targetSiblings = node[CHILDREN]
-              }
-              if (draggedSiblings! && targetSiblings!) {
-                break
-              }
+              const targetParentId = placeholder.parentStat?.id ?? null
+              const newData = [...props.data];
+              const removed = removeByIdInFlatData(newData, draggedStat.id, flatOpt)
+              const newNode = { ...draggedStat.node, [PID]: targetParentId }
+              removed[0] = newNode
+              const targetTreeIndex = convertIndexToTreeIndexInFlatData(newData, targetParentId, targetIndexInSiblings, flatOpt)
+              newData.splice(targetTreeIndex, 0, ...removed)
+              props.onChange!(newData)
             }
-            const ds = draggedSiblings!
-            const ts = targetSiblings!
-            const startIndex = ds.findIndex(v => v[ID] === draggedStat.id)
-            let targetIndex = placeholder.index
-            // check index
-            if (ds === ts && placeholder.index > startIndex) {
-              targetIndex -= 1
-            }
-            // remove from start position
-            ds.splice(startIndex, 1)
-            // move to target position
-            ts.splice(targetIndex, 0, draggedNodeDraft!)
-            props.onChange(nextData())
           }
         }
         if (!customized) {
@@ -1013,6 +1002,66 @@ export function removeByIdInFlatData<T extends Record<Id, any>>(
     return []
   }
   return flatData.splice(startIndex, endIndex - startIndex)
+}
+
+// 'open' utils methods =============
+export function openParentsInFlatData<T extends Record<Id, any>>(
+  flatData: T[],
+  openIds: Id[],
+  idOrIds: Id | Id[],
+  options0?: Partial<typeof flatDataDefaultOptions>
+) {
+  const options = { ...flatDataDefaultOptions, ...options0 }
+  const { idKey: ID, parentIdKey: PID } = options
+  const openIdSet = new Set(openIds)
+  const idsToOpen = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
+  const idsToOpenSet = new Set(idsToOpen)
+  if (idsToOpenSet.size > 0) {
+    for (const [node, { parents }] of walkFlatDataGenerator(flatData, options)) {
+      const id = node[ID];
+      if (idsToOpenSet.has(id)) {
+        for (const parent of parents) {
+          openIdSet.add(parent[ID])
+        }
+        idsToOpenSet.delete(id)
+        if (idsToOpenSet.size === 0) {
+          break
+        }
+      }
+    }
+  }
+  return Array.from(openIdSet).sort()
+}
+const treeDataDefaultOptions = {
+  idKey: 'id',
+  childrenKey: 'children',
+}
+export function openParentsInTreeData<T extends Record<Id, any>>(
+  treeData: T[],
+  openIds: Id[],
+  idOrIds: Id | Id[],
+  options0?: Partial<typeof treeDataDefaultOptions>
+) {
+  const options = { ...treeDataDefaultOptions, ...options0 }
+  const { idKey: ID, childrenKey: CHILDREN } = options
+  const openIdSet = new Set(openIds)
+  const idsToOpen = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
+  const idsToOpenSet = new Set(idsToOpen)
+  if (idsToOpenSet.size > 0) {
+    for (const [node, { parents }] of walkTreeDataGenerator(treeData, options.childrenKey)) {
+      const id = node[ID];
+      if (idsToOpenSet.has(id)) {
+        for (const parent of parents) {
+          openIdSet.add(parent[ID])
+        }
+        idsToOpenSet.delete(id)
+        if (idsToOpenSet.size === 0) {
+          break
+        }
+      }
+    }
+  }
+  return Array.from(openIdSet).sort()
 }
 
 // private methods

@@ -4,6 +4,7 @@ import {
   convertIndexToTreeIndexInFlatData,
   addToFlatData,
   removeByIdInFlatData,
+  openParentsInFlatData,
 } from "../../lib/HeTree";
 
 test("walkFlatDataGenerator: node, treeIndex", () => {
@@ -216,9 +217,31 @@ test("removeByIdInFlatData", () => {
   expect(removed[0].key).toBe(10);
   expect(cur.length).toBe(data.length - 1);
 });
+test("openParentsInFlatData", () => {
+  let data = createData();
+  let cur = [...data];
+  let openIds = [3];
+  let newOpenids = openParentsInFlatData(cur, openIds, 10);
+  expect(newOpenids.toString()).toBe("1,2,3,5");
+  newOpenids = openParentsInFlatData(cur, [], 10);
+  expect(newOpenids.toString()).toBe("1,2,5");
+  newOpenids = openParentsInFlatData(cur, [], 11);
+  expect(newOpenids.toString()).toBe("");
+});
 
 function createData(id = "id", parent_id = "parent_id") {
   // size 9
+  /* structure
+  1
+    2
+      5
+        10
+      4
+        8
+    3
+      7
+      6
+  */
   return [
     {
       [id]: 1,

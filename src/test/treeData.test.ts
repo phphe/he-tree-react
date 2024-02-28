@@ -3,6 +3,7 @@ import {
   walkTreeData,
   findTreeData,
   filterTreeData,
+  openParentsInTreeData,
 } from "../../lib/HeTree";
 
 test("walkTreeDataGenerator", () => {
@@ -26,7 +27,6 @@ test("walkTreeDataGenerator: exitWalk", () => {
     node,
     { parent, index, parents, skipChildren, exitWalk },
   ] of walkTreeDataGenerator(data)) {
-    console.log(node.text);
     if (i === 3) {
       exitWalk();
     }
@@ -141,6 +141,19 @@ test("filterTreeData", () => {
   expect(r.length).toBe(4);
   r = filterTreeData(data, (node) => node.text === "===========");
   expect(r.length).toBe(0);
+});
+test("openParentsInTreeData", () => {
+  let data = createData();
+  let cur = [...data];
+  let openIds = ["Frontend"];
+  let newOpenids = openParentsInTreeData(cur, openIds, "The Godfather", {
+    idKey: "text",
+  });
+  expect(newOpenids.toString()).toBe("Frontend,Movie,Videos");
+  newOpenids = openParentsInTreeData(cur, [], "Next", { idKey: "text" });
+  expect(newOpenids.toString()).toBe("Frontend,Projects,React");
+  newOpenids = openParentsInTreeData(cur, [], "===================");
+  expect(newOpenids.toString()).toBe("");
 });
 
 function createData() {

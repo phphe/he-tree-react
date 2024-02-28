@@ -115,38 +115,14 @@ function App() {
     { "id": 100, "pid": 50, "name": "Black Holes" },
     { "id": 101, "pid": 50, "name": "Wormholes" }
   ], 'id', 'pid'));
-  const toggleOpen = (id) => {
-    // setflatData(draft => {
-    //   let x = draft.find(v => v.id === node.id)
-    //   x.open = !x.open
-    // })
-    // let a = new Set(openIds)
-    // if (a.has(id)) {
-    //   a.delete(id)
-    // } else {
-    //   a.add(id)
-    // }
-    // setopenIds([...a])
-  }
-  let stop = false
-  function* aaa() {
-    for (const a of [4, 5]) {
-      yield a;
-      if (stop) {
-        return
-      }
-      yield* b()
+  const updateOpen = (id, open) => {
+    let ids = [...openIds];
+    if (open) {
+      ids.push(id)
+    } else {
+      ids.splice(ids.indexOf(id), 1)
     }
-    function* b() {
-      yield 6
-      yield 7
-    }
-  }
-  for (const a of aaa()) {
-    console.log(a);
-    if (a === 4) {
-      stop = true
-    }
+    setopenIds(ids)
   }
   const toggleCheck = (id) => {
     let a = new Set(checkedIds)
@@ -163,7 +139,7 @@ function App() {
     data: flatData,
     dataType: 'flat',
     renderNode: ({ id, node, open, checked }) => <div>
-      <button onClick={() => { toggleOpen(id) }}>{open ? '-' : '+'}</button>
+      <button onClick={() => { updateOpen(id, !open) }}>{open ? '-' : '+'}</button>
       <input type="checkbox" checked={Boolean(checked)} onChange={() => { toggleCheck(id) }} />
       {node?.name}
     </div>,
