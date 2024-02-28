@@ -5,6 +5,7 @@ import {
   addToFlatData,
   removeByIdInFlatData,
   openParentsInFlatData,
+  updateCheckedInFlatData,
 } from "../../lib/HeTree";
 
 test("walkFlatDataGenerator: node, treeIndex", () => {
@@ -225,7 +226,7 @@ test("removeByIdInFlatData", () => {
   expect(cur.length).toBe(4);
   //
   cur = [...data];
-  console.log("if remove id 5", removeByIdInFlatData(cur, 5));
+  removeByIdInFlatData(cur, 5)
   expect(cur.length).toBe(7);
   //
   cur = createData("key");
@@ -244,6 +245,35 @@ test("openParentsInFlatData", () => {
   expect(newOpenids.toString()).toBe("1,2,5");
   newOpenids = openParentsInFlatData(cur, [], 11);
   expect(newOpenids.toString()).toBe("");
+});
+test("updateCheckedInFlatData", () => {
+  let data = createData();
+  let cur = [...data];
+  let ids = [3];
+  let [newIds, semi,all] = updateCheckedInFlatData(cur,ids,[], true);
+  expect(newIds.toString()).toBe("3");
+  // 
+  [newIds, semi] = updateCheckedInFlatData(cur,ids,[3], true);
+  expect(newIds.toString()).toBe("3,6,7");
+  expect(semi.toString()).toBe("1");
+  // 
+  [newIds, semi] = updateCheckedInFlatData(cur,[],[8,10], true);
+  expect(newIds.toString()).toBe("10,2,4,5,8");
+  expect(semi.toString()).toBe("1");
+  // uncheck
+  [newIds, semi, all] = updateCheckedInFlatData(cur,[10,2,4,8,5],[8], false);
+  expect(newIds.toString()).toBe("10,5");
+  expect(semi.toString()).toBe("1,2");
+  expect(all.toString()).toBe("1,10,2,5");
+  // 
+  [newIds, semi, all] = updateCheckedInFlatData(cur,[1,2,5,10,4,8,3,7,6],[6,7], !false);
+  expect(newIds.length).toBe(9);
+  expect(semi.length).toBe(0);
+  expect(all.length).toBe(9);
+  // 
+  [newIds, semi, all] = updateCheckedInFlatData(cur,[1,2,5,10,4,8,3,7,6],[6,7], false);
+  expect(semi.toString()).toBe('1');
+  
 });
 
 function createData(id = "id", parent_id = "parent_id") {

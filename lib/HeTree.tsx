@@ -851,7 +851,7 @@ const flatDataDefaultOptions = {
   parentIdKey: 'parent_id',
 }
 export type WalkFlatDataYield<T> = [T, {
-  parent: T | null, parents: T[], index: number, treeIndex: number, id: Id, pid: Id, skipChildren: VoidFunction, exitWalk: VoidFunction
+  parent: T | null, parents: T[], index: number, treeIndex: number, id: Id, pid: Id | null, skipChildren: VoidFunction, exitWalk: VoidFunction
 }]
 export function* walkFlatDataGenerator<T extends Record<Id, any>>(flatData: T[], options0?: Partial<typeof flatDataDefaultOptions>): Generator<WalkFlatDataYield<T>> {
   const options = { ...flatDataDefaultOptions, ...options0 }
@@ -868,7 +868,7 @@ export function* walkFlatDataGenerator<T extends Record<Id, any>>(flatData: T[],
   let treeIndex = 0
   for (const node of flatData) {
     const id: Id = node[ID];
-    const pid: Id = node[PID];
+    const pid: Id = node[PID] ?? null;
     nodes[id] = node;
     const parent = nodes[pid] || null;
     childIdsById[id] = [];
@@ -1065,7 +1065,61 @@ export function openParentsInTreeData<T extends Record<Id, any>>(
   }
   return Array.from(openIdSet).sort()
 }
-
+// 'checked' utils methods =============
+export function updateCheckedInFlatData<T extends Record<Id, any>>(
+  flatData: T[],
+  checkedIds: Id[],
+  idOrIds: Id | Id[],
+  checked: boolean,
+  options?: Partial<typeof flatDataDefaultOptions>
+) {
+  const checkedIdSet = new Set(checkedIds)
+  const idsToUpdate = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
+  const all = new Map<Id, Checked>()
+  const changedPids = new Set<Id>(idsToUpdate)
+  const pidById: Record<Id, Id | null> = {}
+  const childIdsById = new Map<Id | null, Id[]>()
+  childIdsById.set(null, [])
+  for (const [node, { parents, id, pid }] of walkFlatDataGenerator(flatData, options)) {
+    pidById[id] = pid
+    childIdsById.get(pid)!.push(id)
+    childIdsById.set(id, [])
+    all.set(id, checkedIdSet.has(id))
+    if (changedPids.has(id) || (pid && changedPids.has(pid))) {
+      // update self and children
+      all.set(id, checked)
+      changedPids.add(id)
+    }
+  }
+  // update parents
+  for (const id of idsToUpdate) {
+    let cur = pidById[id];
+    while (cur != null) {
+      let allChecked = true
+      let hasChecked = false
+      for (const childId of childIdsById.get(cur)!) {
+        if (all.get(childId) === false) {
+          allChecked = false
+        } else {
+          hasChecked = true
+        }
+      }
+      all.set(cur, allChecked ? true : (hasChecked ? null : false))
+      cur = pidById[cur]
+    }
+  }
+  const newCheckedIds: Id[] = [];
+  const semiCheckedIds: Id[] = [];
+  all.forEach((v, k) => {
+    if (v === true) {
+      newCheckedIds.push(k)
+    } else if (v === null) {
+      semiCheckedIds.push(k)
+    }
+  })
+  const allChecked = [...newCheckedIds, ...semiCheckedIds];
+  return [newCheckedIds.sort(), semiCheckedIds.sort(), allChecked.sort()]
+}
 // private methods
 function calculateDistance(x1: number, y1: number, x2: number, y2: number) {
   return Math.sqrt(Math.pow((x2 - x1), 2) + Math.pow((y2 - y1), 2));
