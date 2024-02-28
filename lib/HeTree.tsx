@@ -1002,6 +1002,7 @@ export function removeByIdInFlatData<T extends Record<Id, any>>(
       }
     } else {
       endIndex = treeIndex
+      break
     }
   }
   if (endIndex === -1) {

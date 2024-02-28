@@ -204,14 +204,21 @@ test("removeByIdInFlatData", () => {
   //
   cur = [...data];
   removeByIdInFlatData(cur, 2);
-  expect(cur.length).toBe(2);
+  expect(cur.length).toBe(4);
   //
   cur = [...data];
-  removeByIdInFlatData(cur, 5);
-  expect(cur.length).toBe(3);
+  console.log("if remove id 5", removeByIdInFlatData(cur, 5));
+  expect(cur.length).toBe(7);
+  //
+  cur = createData("key");
+  let removed = removeByIdInFlatData(cur, 10, { idKey: "key" });
+  expect(removed.length).toBe(1);
+  expect(removed[0].key).toBe(10);
+  expect(cur.length).toBe(data.length - 1);
 });
 
 function createData(id = "id", parent_id = "parent_id") {
+  // size 9
   return [
     {
       [id]: 1,
