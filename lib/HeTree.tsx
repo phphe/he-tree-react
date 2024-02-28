@@ -980,12 +980,12 @@ export function updateCheckedInFlatData<T extends Record<Id, any>>(
     let hasFalse = false
     let hasNull = false
     for (const childId of childIds) {
+      // must loop all, must call walk on every child
       let t = walk(childId)
       if (t === false) {
         hasFalse = true
       } else if (t === null) {
         hasNull = true
-        break
       } else {
         hasTrue = true
       }
@@ -1057,12 +1057,12 @@ export function updateCheckedInTreeData<T extends Record<Id, any>>(
     let hasFalse = false
     let hasNull = false
     for (const childId of childIds) {
+      // must loop all, must call walk on every child
       let t = walk(childId)
       if (t === false) {
         hasFalse = true
       } else if (t === null) {
         hasNull = true
-        break
       } else {
         hasTrue = true
       }
