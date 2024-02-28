@@ -174,46 +174,17 @@ export function useHeTree<T extends Record<string, any>>(
         }
         return stats[id]
       }
-      let draft: T[] | null = null
-      function getDraft() {
-        if (!draft) {
-          const map = new Map<Stat<T> | null, T[]>()
-          map.set(null, [])
-          draft = map.get(null)!
-          for (const [stat, { parent: parentStat }] of walkTreeDataGenerator(rootStats, 'childStats')) {
-            const newNode = { ...stat.node, [CHILDREN]: [] }
-            map.set(stat, newNode[CHILDREN])
-            map.get(parentStat)!.push(newNode)
-          }
-        }
-        return draft
-      }
-      function nextData() {
-        const draft = getDraft()
-        let result = draft
-        if (props.dataType === 'flat') {
-          result = [];
-          for (const [node, { parent }] of walkTreeDataGenerator(draft, CHILDREN)) {
-            // @ts-ignore
-            node[PID] = parent ? parent[ID] : props.rootId
-            result.push(node)
-          }
-        }
-        return result
-      }
       return {
         // root
         rootIds, rootNodes, rootStats,
         // methods
         getStat,
-        getDraft,
-        nextData,
       }
     }, [props.data, props.dataType, ID, PID, openIdSet, checkedIdSet, props.rootId,
     isFunctionReactive && props.canDrag,
   ]
   );
-  const { rootIds, rootStats, getStat, getDraft, nextData } = mainCache;
+  const { rootIds, rootStats, getStat, } = mainCache;
   // about drag ==================================
   const indent = props.indent!
   const [draggedStat, setDraggedStat] = useState<Stat<T>>();
