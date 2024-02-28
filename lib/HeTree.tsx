@@ -452,53 +452,38 @@ export function useHeTree<T extends Record<string, any>>(
             customized = true
           }
           if (!customized && !isExternal) {
-            // move node
-            // const draft = getDraft()
-            // let draggedSiblings: T[], targetSiblings: T[]
-            // if (!placeholder.parentStat) {
-            //   targetSiblings = draft
-            // }
-            // let draggedNodeDraft: T
-            // for (const [node, { siblings }] of walkTreeDataGenerator(draft, CHILDREN)) {
-            //   if (node[ID] === draggedStat.id) {
-            //     draggedSiblings = siblings
-            //     draggedNodeDraft = node
-            //   }
-            //   if (!targetSiblings! && node[ID] === placeholder.parentStat!.id) {
-            //     targetSiblings = node[CHILDREN]
-            //   }
-            //   if (draggedSiblings! && targetSiblings!) {
-            //     break
-            //   }
-            // }
-            // const ds = draggedSiblings!
-            // const ts = targetSiblings!
-            // const startIndex = ds.findIndex(v => v[ID] === draggedStat.id)
-            // let targetIndex = placeholder.index
-            // // check index
-            // if (ds === ts && placeholder.index > startIndex) {
-            //   targetIndex -= 1
-            // }
-            // // remove from start position
-            // ds.splice(startIndex, 1)
-            // // move to target position
-            // ts.splice(targetIndex, 0, draggedNodeDraft!)
-            // props.onChange(nextData())
+            let targetIndexInSiblings = placeholder.index
+            if (placeholder.parentStat === draggedStat.parentStat && draggedStat.index < targetIndexInSiblings) {
+              targetIndexInSiblings--
+            }
+            const newData = [...props.data];
             if (props.dataType === 'flat') {
-              const startIndex = props.data.findIndex(v => v[ID] === draggedStat.id)
-              let targetIndexInSiblings = placeholder.index
-              if (placeholder.parentStat === draggedStat.parentStat && draggedStat.index < targetIndexInSiblings) {
-                targetIndexInSiblings--
-              }
               const targetParentId = placeholder.parentStat?.id ?? null
-              const newData = [...props.data];
               const removed = removeByIdInFlatData(newData, draggedStat.id, flatOpt)
               const newNode = { ...draggedStat.node, [PID]: targetParentId }
               removed[0] = newNode
               const targetTreeIndex = convertIndexToTreeIndexInFlatData(newData, targetParentId, targetIndexInSiblings, flatOpt)
               newData.splice(targetTreeIndex, 0, ...removed)
-              props.onChange!(newData)
+            } else {
+              // copy data
+              const copyNode = (stat: Stat<T> | null) => {
+                if (!stat) {
+                  return newData
+                }
+                const siblings = copyNode(stat.parentStat)
+                const children = [...stat.children];
+                const newNode = { ...stat.node, [CHILDREN]: children }
+                siblings[stat.index] = newNode;
+                return children
+              }
+              const newSiblingsOfDragged = copyNode(draggedStat.parentStat)
+              const newSiblingsOfTarget = placeholder.parentStat === draggedStat.parentStat ? newSiblingsOfDragged : copyNode(placeholder.parentStat)
+              // remove
+              newSiblingsOfDragged.splice(draggedStat.index, 1)
+              // add
+              newSiblingsOfTarget.splice(targetIndexInSiblings, 0, draggedStat.node)
             }
+            props.onChange!(newData)
           }
         }
         if (!customized) {
