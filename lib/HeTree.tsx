@@ -468,14 +468,18 @@ export function useHeTree<T extends Record<string, any>>(
               const targetTreeIndex = convertIndexToTreeIndexInFlatData(newData, targetParentId, targetIndexInSiblings, flatOpt)
               newData.splice(targetTreeIndex, 0, ...removed)
             } else {
+              // treeData
               // copy data
+              const newNodeCache = new Map<T, T>()
               const copyNode = (stat: Stat<T> | null) => {
                 if (!stat) {
                   return newData
                 }
                 const siblings = copyNode(stat.parentStat)
-                const children = [...stat.children];
-                const newNode = { ...stat.node, [CHILDREN]: children }
+                let children = [...stat.children];
+                const newNode = newNodeCache.get(stat.node) || { ...stat.node, [CHILDREN]: children }
+                newNodeCache.set(stat.node, newNode)
+                children = newNode[CHILDREN];
                 siblings[stat.index] = newNode;
                 return children
               }
@@ -704,7 +708,9 @@ export function* walkParentsGenerator<T>(
   }
 }
 // flat data utils methods =============
-export function sortFlatData<T extends Record<string, any>>(data: T[], ID: string, PID: string) {
+export function sortFlatData<T extends Record<string, any>>(data: T[], options0?: Partial<typeof flatDataDefaultOptions>) {
+  const options = { ...flatDataDefaultOptions, ...options0 }
+  const { idKey: ID, parentIdKey: PID } = options
   const childrenById = new Map<any, T[]>()
   childrenById.set(null, [])
   const rootNodes = childrenById.get(null)!
