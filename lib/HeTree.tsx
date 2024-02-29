@@ -96,22 +96,25 @@ export function useHeTree<T extends Record<string, any>>(
       const rootNodes: T[] = []
       const rootStats: Stat<T>[] = []
       // 
-      function* simpleWalk(): Generator<T> {
+      function* simpleWalk() {
         if (props.dataType === 'flat') {
           for (const node of props.data) {
-            yield node
+            yield [node]
           }
         } else {
-          for (const [node] of walkTreeDataGenerator(props.data, CHILDREN)) {
-            yield node
+          for (const t of walkTreeDataGenerator(props.data, CHILDREN)) {
+            yield t
           }
         }
       }
       let count = 0
-      for (const node of simpleWalk()) {
+      for (const [node, info] of simpleWalk()) {
         const id: Id = node[ID] ?? count
-        const pid = node[PID] as Id
-        const parent = nodes[pid] || null
+        let pid = node[PID] as Id
+        if (props.dataType === 'tree') {
+          pid = info.parent?.[ID] ?? null
+        }
+        let parent = nodes[pid] || null
         const parentStat = stats[pid] || null;
         const childIds: Id[] = []
         const children: T[] = []
