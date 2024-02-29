@@ -1,5 +1,5 @@
 import "./HeTree.css";
-import React, { useEffect, useMemo, useState, useRef, ReactNode, useCallback, useImperativeHandle } from "react";
+import React, { useEffect, useMemo, useState, useRef, ReactNode, useCallback, useImperativeHandle, DragEventHandler } from "react";
 import * as hp from "helper-js";
 import { VirtualList, VirtualListHandle } from "./VirtualList";
 
@@ -65,7 +65,10 @@ export interface HeTreeProps<T extends Record<string, any>> extends Partial<type
   onDragOver?: (e: React.DragEvent<HTMLElement>, stat: Stat<T>, isExternal: boolean) => void,
   onExternalDrag?: (e: React.DragEvent<HTMLElement>) => boolean,
   onDrop?: (e: React.DragEvent<HTMLElement>, parentStat: Stat<T> | null, index: number, isExternal: boolean) => boolean | void,
-  onDragEnd?: (e: React.DragEvent<HTMLElement>, stat: Stat<T>, isOutside: boolean) => void,
+  /**
+   * Call on drag end in the window. If you use draggedStat in the callback, it will be undefined if onDrop alreay triggered.
+   */
+  onDragEnd?: (e: React.DragEvent<Window>, isOutside: boolean) => void,
   onChange: (data: T[]) => void,
   openIds?: Id[],
   checkedIds?: Id[],
@@ -87,6 +90,7 @@ export function useHeTree<T extends Record<string, any>>(
   const checkedIdSet = useMemo(() => new Set(props.checkedIds), [checkedIdsStr])
   const semiCheckedIdStr = useMemo(() => props.semiCheckedIds ? [...props.semiCheckedIds].sort().toString() : '', [props.semiCheckedIds])
   const semiCheckedIdSet = useMemo(() => new Set(props.semiCheckedIds), [semiCheckedIdStr])
+  const onDragEndRef = useRef<DragEventHandler<Window>>();
   // mainCache ==================================
   const mainCache = useMemo(
     () => {
@@ -302,12 +306,8 @@ export function useHeTree<T extends Record<string, any>>(
               })
             }, 0)
             props.onDragStart?.(e, stat)
-            // listen dragend. dragend only trigger in dragstart window
-            const onDragEnd = (e: DragEvent) => {
-              // TODO
-              window.removeEventListener('dragend', onDragEnd);
-            }
-            window.addEventListener('dragend', onDragEnd);
+            // @ts-ignore
+            onDragEndRef.current = onDragEndInWindow
           },
           onDragOver(e) {
             if (isExternal && !props.onExternalDrag?.(e)) {
@@ -496,6 +496,27 @@ export function useHeTree<T extends Record<string, any>>(
         if (!customized) {
           e.preventDefault();
         }
+        resetDragStates()
+      }
+      if (onDragEndRef.current) {
+        // update dragEnd handler
+        // @ts-ignore
+        window.removeEventListener('dragend', onDragEndRef.current);
+        // @ts-ignore
+        window.addEventListener('dragend', onDragEndInWindow);
+        // @ts-ignore
+        onDragEndRef.current = onDragEndInWindow
+      }
+      function onDragEndInWindow(e: React.DragEvent<Window>) {
+        // listen dragend. dragend only trigger in dragstart window
+        onDragEndRef.current = undefined
+        // @ts-ignore
+        window.removeEventListener('dragend', onDragEndInWindow);
+        const isOutside = Boolean(draggedStat)
+        props.onDragEnd?.(e, isOutside)
+        resetDragStates()
+      }
+      function resetDragStates() {
         setDragOverStat(undefined);
         setDraggedStat(undefined);
         setPlaceholder(undefined);
