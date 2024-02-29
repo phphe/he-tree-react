@@ -5,10 +5,11 @@ import {
   filterTreeData,
   openParentsInTreeData,
   updateCheckedInTreeData,
+  useHeTree,
 } from "../../lib/HeTree";
 
 test("walkTreeDataGenerator", () => {
-  let data = createData();
+  let data = createDataLong();
   for (const [
     node,
     { parent, index, parents, skipChildren, exitWalk },
@@ -22,7 +23,7 @@ test("walkTreeDataGenerator", () => {
   }
 });
 test("walkTreeDataGenerator: exitWalk", () => {
-  let data = createData();
+  let data = createDataLong();
   let i = 0;
   for (const [
     node,
@@ -36,7 +37,7 @@ test("walkTreeDataGenerator: exitWalk", () => {
   expect(i).toBe(4);
 });
 test("walkTreeDataGenerator: skipChildren", () => {
-  let data = createData();
+  let data = createDataLong();
   let i = 0;
   for (const [
     node,
@@ -48,7 +49,7 @@ test("walkTreeDataGenerator: skipChildren", () => {
   expect(i).toBe(data.length);
 });
 test("walkTreeDataGenerator: siblings, index", () => {
-  let data = createData();
+  let data = createDataLong();
   for (const [
     node,
     { parent, parents, skipChildren, exitWalk, siblings, index },
@@ -63,7 +64,7 @@ test("walkTreeDataGenerator: siblings, index", () => {
   }
 });
 test("walkTreeData", () => {
-  let data = createData();
+  let data = createDataLong();
   walkTreeData(
     data,
     (node, { parent, parents, skipChildren, exitWalk, siblings, index }) => {
@@ -78,7 +79,7 @@ test("walkTreeData", () => {
   );
 });
 test("walkTreeData: skipChildren", () => {
-  let data = createData();
+  let data = createDataLong();
   let i = 0;
   walkTreeData(
     data,
@@ -90,7 +91,7 @@ test("walkTreeData: skipChildren", () => {
   expect(i).toBe(data.length);
 });
 test("walkTreeData: exitWalk", () => {
-  let data = createData();
+  let data = createDataLong();
   let i = 0;
   walkTreeData(
     data,
@@ -130,21 +131,21 @@ test("walkTreeData: options", () => {
   );
 });
 test("findTreeData", () => {
-  let data = createData();
+  let data = createDataLong();
   let r = findTreeData(data, (node) => node.text === "Next");
   expect(r?.text).toBe("Next");
   r = findTreeData(data, (node) => node.text === "Next============");
   expect(r).toBe(undefined);
 });
 test("filterTreeData", () => {
-  let data = createData();
+  let data = createDataLong();
   let r = filterTreeData(data, (node) => node.text.startsWith("A"));
   expect(r.length).toBe(4);
   r = filterTreeData(data, (node) => node.text === "===========");
   expect(r.length).toBe(0);
 });
 test("openParentsInTreeData", () => {
-  let data = createData();
+  let data = createDataLong();
   let cur = [...data];
   let openIds = ["Frontend"];
   let newOpenids = openParentsInTreeData(cur, openIds, "The Godfather", {
@@ -157,7 +158,7 @@ test("openParentsInTreeData", () => {
   expect(newOpenids.toString()).toBe("");
 });
 test("updateCheckedInTreeData", () => {
-  let data = createData2();
+  let data = createData();
   let cur = [...data];
   let ids = [7];
   let [newIds, semi] = updateCheckedInTreeData(cur, ids, [], true);
@@ -203,7 +204,9 @@ test("updateCheckedInTreeData", () => {
   expect(semi.toString()).toBe("1,2");
 });
 
-function createData() {
+test("useHeTree", () => {});
+
+function createDataLong() {
   // return example tree data
   return [
     {
@@ -332,7 +335,7 @@ function createData() {
   ];
 }
 
-function createData2() {
+export function createData() {
   // same to flatData.test
   // size 9
   /* structure

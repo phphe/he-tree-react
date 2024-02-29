@@ -8,9 +8,12 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [UnoCSS(), react()],
   base: "/he-tree-react",
+  server: {
+    port: 3000,
+  },
   test: {
     globals: true,
-    // environment: "js-dom",
+    environment: "edge-runtime",
     coverage: {
       provider: "v8",
       enabled: true,

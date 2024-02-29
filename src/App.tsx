@@ -1,7 +1,6 @@
-import example_data from "./examples/example_data.json";
-import { sortFlatData, useHeTree, updateCheckedInFlatData } from "../lib/HeTree";
-import { useState } from "react";
-import { useImmer } from "use-immer";
+import React, { lazy, Suspense } from 'react';
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+
 
 function App() {
   // const [flatData, setflatData] = useState(() => {
