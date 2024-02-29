@@ -34,10 +34,10 @@
     "preview": "vite preview",
     "coverage": "vitest run --coverage",
     "test": "vitest",
-    "test:ui": "vitest --ui"
-  },
-  "publishConfig": {
-    "access": "public"
+    "test:ui": "vitest --ui",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
   },
   "dependencies": {
     "helper-js": "^3.1.5",
@@ -64,6 +64,16 @@
     "use-immer": "^0.9.0",
     "vite": "^5.0.8",
     "vite-plugin-dts": "^3.7.2",
-    "vitest": "^1.3.1"
+    "vitepress": "1.0.0-rc.44",
+    "vitest": "^1.3.1",
+    "vue": "^3.4.21"
+  },
+  "pnpm": {
+    "peerDependencyRules": {
+      "ignoreMissing": [
+        "@algolia/client-search",
+        "search-insights"
+      ]
+    }
   }
 }
