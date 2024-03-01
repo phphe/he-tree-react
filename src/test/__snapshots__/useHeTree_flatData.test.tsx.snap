@@ -1,0 +1,191 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`render tree 1`] = `
+<div
+  className="he-tree"
+  onDragEnd={[Function]}
+  onDragOver={[Function]}
+  onDrop={[Function]}
+>
+  <div
+    onScroll={[Function]}
+    style={
+      {
+        "overflow": "auto",
+      }
+    }
+  >
+    <div
+      style={
+        {
+          "display": "flex",
+          "flexDirection": "column",
+        }
+      }
+    >
+      <div
+        data-key="1"
+        data-level="1"
+        data-node-box={true}
+        draggable={true}
+        onDragLeave={[Function]}
+        onDragOver={[Function]}
+        onDragStart={[Function]}
+        style={
+          {
+            "paddingLeft": "0px",
+          }
+        }
+      >
+        <div>
+          Root Category
+        </div>
+      </div>
+      <div
+        data-key="2"
+        data-level="2"
+        data-node-box={true}
+        draggable={true}
+        onDragLeave={[Function]}
+        onDragOver={[Function]}
+        onDragStart={[Function]}
+        style={
+          {
+            "paddingLeft": "20px",
+          }
+        }
+      >
+        <div>
+          Technology
+        </div>
+      </div>
+      <div
+        data-key="5"
+        data-level="3"
+        data-node-box={true}
+        draggable={true}
+        onDragLeave={[Function]}
+        onDragOver={[Function]}
+        onDragStart={[Function]}
+        style={
+          {
+            "paddingLeft": "40px",
+          }
+        }
+      >
+        <div>
+          Hardware
+        </div>
+      </div>
+      <div
+        data-key="10"
+        data-level="4"
+        data-node-box={true}
+        draggable={true}
+        onDragLeave={[Function]}
+        onDragOver={[Function]}
+        onDragStart={[Function]}
+        style={
+          {
+            "paddingLeft": "60px",
+          }
+        }
+      >
+        <div>
+          Computer Components
+        </div>
+      </div>
+      <div
+        data-key="4"
+        data-level="3"
+        data-node-box={true}
+        draggable={true}
+        onDragLeave={[Function]}
+        onDragOver={[Function]}
+        onDragStart={[Function]}
+        style={
+          {
+            "paddingLeft": "40px",
+          }
+        }
+      >
+        <div>
+          Programming
+        </div>
+      </div>
+      <div
+        data-key="8"
+        data-level="4"
+        data-node-box={true}
+        draggable={true}
+        onDragLeave={[Function]}
+        onDragOver={[Function]}
+        onDragStart={[Function]}
+        style={
+          {
+            "paddingLeft": "60px",
+          }
+        }
+      >
+        <div>
+          Python
+        </div>
+      </div>
+      <div
+        data-key="3"
+        data-level="2"
+        data-node-box={true}
+        draggable={true}
+        onDragLeave={[Function]}
+        onDragOver={[Function]}
+        onDragStart={[Function]}
+        style={
+          {
+            "paddingLeft": "20px",
+          }
+        }
+      >
+        <div>
+          Science
+        </div>
+      </div>
+      <div
+        data-key="7"
+        data-level="3"
+        data-node-box={true}
+        draggable={true}
+        onDragLeave={[Function]}
+        onDragOver={[Function]}
+        onDragStart={[Function]}
+        style={
+          {
+            "paddingLeft": "40px",
+          }
+        }
+      >
+        <div>
+          Biology
+        </div>
+      </div>
+      <div
+        data-key="6"
+        data-level="3"
+        data-node-box={true}
+        draggable={true}
+        onDragLeave={[Function]}
+        onDragOver={[Function]}
+        onDragStart={[Function]}
+        style={
+          {
+            "paddingLeft": "40px",
+          }
+        }
+      >
+        <div>
+          Physics
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`;

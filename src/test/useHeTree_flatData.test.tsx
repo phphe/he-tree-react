@@ -4,7 +4,7 @@ import {
 } from "../../lib/HeTree";
 import renderer from "react-test-renderer";
 import { useState } from 'react';
-import { createData } from "./treeData.test";
+import { createData } from "./flatData.test";
 
 
 test('render tree', () => {
@@ -12,7 +12,7 @@ test('render tree', () => {
     const [data, setdata] = useState(createData);
     const { renderHeTree } = useHeTree({
       data,
-      dataType: 'tree',
+      dataType: 'flat',
       onChange: setdata,
       renderNode: ({ id, node, open, checked }) => <div>
         {node.name}

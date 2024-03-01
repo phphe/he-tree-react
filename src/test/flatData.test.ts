@@ -293,7 +293,7 @@ test("updateCheckedInFlatData", () => {
   expect(semi.toString()).toBe("1,2");
 });
 
-function createData(id = "id", parent_id = "parent_id") {
+export function createData(id = "id", parent_id = "parent_id") {
   // size 9
   /* structure
   1
