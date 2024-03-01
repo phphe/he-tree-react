@@ -49,7 +49,6 @@ export const defaultProps = {
   dragOpenDelay: 600,
   placeholderId: '__DRAG_PLACEHOLDER__',
   dataType: 'flat' as 'tree' | 'flat',
-  rootId: null as any,
 }
 
 export interface HeTreeProps<T extends Record<string, any>> extends Partial<typeof defaultProps> {
@@ -187,7 +186,7 @@ export function useHeTree<T extends Record<string, any>>(
         // methods
         getStat,
       }
-    }, [props.data, props.dataType, ID, PID, openIdSet, checkedIdSet, props.rootId,
+    }, [props.data, props.dataType, ID, PID, openIdSet, checkedIdSet,
     isFunctionReactive && props.canDrag,
   ]
   );
