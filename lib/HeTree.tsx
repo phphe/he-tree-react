@@ -198,7 +198,7 @@ export function useHeTree<T extends Record<string, any>>(
   const [dragOverStat, setDragOverStat] = useState<Stat<T>>();
   const virtualListRef = useRef<VirtualListHandle>(null);
   const rootRef = useRef<HTMLDivElement>(null)
-  const [placeholder, setPlaceholder] = useState<{ parentStat: Stat<T> | null, level: number, index: number, height: number } | null>();
+  const [placeholder, setPlaceholder] = useState<{ parentStat: Stat<T> | null, level: number, index: number } | null>();
   const isExternal = !draggedStat
   const cacheForVisible = useMemo(
     () => {
