@@ -71,6 +71,7 @@ export interface HeTreeProps<T extends Record<string, any>> extends Partial<type
    */
   onDragEnd?: (e: React.DragEvent<HTMLElement>, stat: Stat<T>, isOutside: boolean) => void | boolean,
   onChange: (data: T[]) => void,
+  onDragOpen?: (stat: Stat<T>) => void,
   openIds?: Id[],
   checkedIds?: Id[],
   semiCheckedIds?: Id[],
@@ -326,8 +327,7 @@ export function useHeTree<T extends Record<string, any>>(
               }
             }
             if (shouldDragOpen()) {
-              // TODO
-              // props.onDragOpen!(stat)
+              props.onDragOpen!(stat)
             }
             // dragOpen end ========================
             let t = findClosestAndNext(stat, isPlaceholder)
