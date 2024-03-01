@@ -1,4 +1,3 @@
-import "./HeTree.css";
 import React, { useEffect, useMemo, useState, useRef, ReactNode, useCallback, useImperativeHandle, DragEventHandler, useLayoutEffect } from "react";
 import * as hp from "helper-js";
 import { VirtualList, VirtualListHandle } from "./VirtualList";
@@ -624,8 +623,9 @@ export function useHeTree<T extends Record<string, any>>(
         if (!cached) {
           let renderNodeBox = props.renderNodeBox!
           if (!renderNodeBox) {
+            const placeholder = <div className="he-tree-drag-placeholder" style={{ minHeight: '20px', border: '1px dashed blue' }}></div>
             renderNodeBox = ({ stat, attrs, isPlaceholder }) => <div {...attrs}>
-              {isPlaceholder ? <div></div> : props.renderNode!(stat)}
+              {isPlaceholder ? placeholder : props.renderNode!(stat)}
             </div>
           }
           // 
