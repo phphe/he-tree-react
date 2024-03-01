@@ -20,7 +20,11 @@
     // "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     // vitest
-    "types": ["vitest/globals"]
+    "types": ["vitest/globals"],
+    // alias
+    "paths": {
+      "he-tree-react": ["./lib/index.ts"]
+    },
   },
   "include": ["src","lib"],
   "references": [{ "path": "./tsconfig.node.json" }]
