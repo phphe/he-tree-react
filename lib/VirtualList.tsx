@@ -127,7 +127,11 @@ export const VirtualList = forwardRef(function <ITEM>(
   }
 
   useLayoutEffect(() => {
-    setListSize(list.current!.clientHeight)
+    // list may be null in test environment
+    if (!list.current) {
+      return
+    }
+    setListSize(list.current.clientHeight)
     // get avg item size
     if (props.itemSize == null) {
       // get gap
@@ -215,7 +219,8 @@ export const VirtualList = forwardRef(function <ITEM>(
     const observer = ResizeObserver && new ResizeObserver(() => {
       setListSize(list.current!.clientHeight)
     })
-    observer.observe(list.current as HTMLElement)
+    // observer is undefined in test environment
+    observer?.observe(list.current as HTMLElement)
     return () => {
       observer?.disconnect()
     }
