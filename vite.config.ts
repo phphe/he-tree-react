@@ -13,7 +13,7 @@ export default defineConfig({
   },
   test: {
     globals: true,
-    environment: "edge-runtime",
+    environment: "jsdom",
     coverage: {
       provider: "v8",
       enabled: true,
