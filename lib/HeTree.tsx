@@ -1,5 +1,5 @@
 import "./HeTree.css";
-import React, { useEffect, useMemo, useState, useRef, ReactNode, useCallback, useImperativeHandle, DragEventHandler } from "react";
+import React, { useEffect, useMemo, useState, useRef, ReactNode, useCallback, useImperativeHandle, DragEventHandler, useLayoutEffect } from "react";
 import * as hp from "helper-js";
 import { VirtualList, VirtualListHandle } from "./VirtualList";
 
@@ -55,6 +55,7 @@ export const defaultProps = {
 export interface HeTreeProps<T extends Record<string, any>> extends Partial<typeof defaultProps> {
   data: T[],
   isFunctionReactive?: boolean,
+  keepPlaceholder?: boolean,
   renderNode?: (stat: Stat<T>) => ReactNode,
   renderNodeBox?: (info: { stat: Stat<T>, attrs: NodeAttrs, isPlaceholder: boolean }) => ReactNode,
   canDrag?: (stat: Stat<T>) => boolean | null | undefined | void,
@@ -64,11 +65,11 @@ export interface HeTreeProps<T extends Record<string, any>> extends Partial<type
   onDragStart?: (e: React.DragEvent<HTMLElement>, stat: Stat<T>) => void,
   onDragOver?: (e: React.DragEvent<HTMLElement>, stat: Stat<T>, isExternal: boolean) => void,
   onExternalDrag?: (e: React.DragEvent<HTMLElement>) => boolean,
-  onDrop?: (e: React.DragEvent<HTMLElement>, parentStat: Stat<T> | null, index: number, isExternal: boolean) => boolean | void,
+  onDrop?: (e: React.DragEvent<HTMLElement>, parentStat: Stat<T> | null, index: number, isExternal: boolean) => void,
   /**
    * Call on drag end in the window. If you use draggedStat in the callback, it will be undefined if onDrop alreay triggered.
    */
-  onDragEnd?: (e: React.DragEvent<Window>, isOutside: boolean) => void,
+  onDragEnd?: (e: React.DragEvent<HTMLElement>, stat: Stat<T>, isOutside: boolean) => void | boolean,
   onChange: (data: T[]) => void,
   openIds?: Id[],
   checkedIds?: Id[],
@@ -90,7 +91,6 @@ export function useHeTree<T extends Record<string, any>>(
   const checkedIdSet = useMemo(() => new Set(props.checkedIds), [checkedIdsStr])
   const semiCheckedIdStr = useMemo(() => props.semiCheckedIds ? [...props.semiCheckedIds].sort().toString() : '', [props.semiCheckedIds])
   const semiCheckedIdSet = useMemo(() => new Set(props.semiCheckedIds), [semiCheckedIdStr])
-  const onDragEndRef = useRef<DragEventHandler<Window>>();
   // mainCache ==================================
   const mainCache = useMemo(
     () => {
@@ -196,7 +196,8 @@ export function useHeTree<T extends Record<string, any>>(
   const indent = props.indent!
   const [draggedStat, setDraggedStat] = useState<Stat<T>>();
   const [dragOverStat, setDragOverStat] = useState<Stat<T>>();
-  const virtualList = useRef<VirtualListHandle>(null);
+  const virtualListRef = useRef<VirtualListHandle>(null);
+  const rootRef = useRef<HTMLDivElement>(null)
   const [placeholder, setPlaceholder] = useState<{ parentStat: Stat<T> | null, level: number, index: number, height: number } | null>();
   const isExternal = !draggedStat
   const cacheForVisible = useMemo(
@@ -204,10 +205,10 @@ export function useHeTree<T extends Record<string, any>>(
       const visibleIds: Id[] = []
       const attrsList: NodeAttrs[] = [];
       for (const [stat, { skipChildren }] of walkTreeDataGenerator(rootStats, 'childStats')) {
-        const attr = createAttrs(stat)
+        const attrs = createAttrs(stat)
         if (stat === draggedStat) {
           // hide dragged node but don't remove it. Because dragend event won't be triggered if without it.
-          Object.assign(attr.style!, {
+          Object.assign(attrs.style!, {
             position: 'fixed',
             top: 0,
             left: 0,
@@ -216,7 +217,7 @@ export function useHeTree<T extends Record<string, any>>(
             visibility: 'hidden',
           })
         }
-        attrsList.push(attr)
+        attrsList.push(attrs)
         visibleIds.push(stat.id)
         if (!stat.open || stat === draggedStat) {
           skipChildren()
@@ -268,22 +269,10 @@ export function useHeTree<T extends Record<string, any>>(
           'data-level': stat.level + '',
           'data-node-box': true,
           onDragStart(e) {
-            // @ts-ignore
-            if (e._handledByNode) {
-              return
-            }
             if (isPlaceholder) {
               e.preventDefault() // prevent drag
               return
             }
-            // prevent if triggered by nested parent
-            const el = e.target as HTMLElement
-            if (el.querySelector(`[draggable=true]`)) {
-              e.preventDefault() // prevent drag
-              return
-            }
-            // @ts-ignore
-            e._handledByNode = true // make parent ignore this event
             // 
             e.dataTransfer!.setData("text", "he-tree"); // set data to work in Chrome Android
             // TODO 拖拽类型识别
@@ -306,15 +295,11 @@ export function useHeTree<T extends Record<string, any>>(
               })
             }, 0)
             props.onDragStart?.(e, stat)
-            // @ts-ignore
-            onDragEndRef.current = onDragEndInWindow
           },
           onDragOver(e) {
             if (isExternal && !props.onExternalDrag?.(e)) {
               return
             }
-            // @ts-ignore
-            e._handledByNode = true // make root ignore this event
             // dragOpen ========================
             const shouldDragOpen = () => {
               if (!props.dragOpen) {
@@ -348,7 +333,7 @@ export function useHeTree<T extends Record<string, any>>(
             const { closest, next } = t
 
             let { atTop } = t
-            const listRoot = virtualList.current!.getRootElement()
+            const rootEl = rootRef.current!
             // @ts-ignore
             const nodeBox = hp.findParent(e.target, (el) => el.hasAttribute('data-node-box'), { withSelf: true })
             // node start position
@@ -357,7 +342,7 @@ export function useHeTree<T extends Record<string, any>>(
             placeholderLevel = hp.between(placeholderLevel, 0, (closest?.level || 0) + 1)
             if (!atTop && !isPlaceholder && closest.id === rootIds[0]) {
               // check if at top
-              const topNodeElement = listRoot.querySelector(`[data-key="${closest.id}"]`)
+              const topNodeElement = rootEl.querySelector(`[data-key="${closest.id}"]`)
               if (topNodeElement) {
                 const rect = topNodeElement.getBoundingClientRect()
                 atTop = rect.y + rect.height / 2 > e.pageY
@@ -414,21 +399,22 @@ export function useHeTree<T extends Record<string, any>>(
             if (newPlaceholder) {
               e.preventDefault(); // call mean droppable
             }
-            !isPlaceholder && setDragOverStat(undefined)
+            setDragOverStat(isPlaceholder ? undefined : stat)
             props.onDragOver?.(e, stat, isExternal)
           },
           onDragLeave(e) {
-            !isPlaceholder && setDragOverStat(undefined)
+            // dragLeave behavior is not expected. https://stackoverflow.com/questions/7110353/html5-dragleave-fired-when-hovering-a-child-element
           },
         }
       }
       const onDragOverRoot: React.DragEventHandler<HTMLElement> = (e) => {
-        // @ts-ignore
-        if (e._handledByNode) {
-          return
-        }
         // ignore if has visible tree node
         if (visibleIds.length > 0) {
+          return
+        }
+        // ignore if already over node box
+        // but it seems to duplicated with the above condition.
+        if (isAnyNodeOver()) {
           return
         }
         if (isExternal && !props.onExternalDrag?.(e)) {
@@ -443,80 +429,82 @@ export function useHeTree<T extends Record<string, any>>(
           })
           e.preventDefault(); // droppable
         }
+        function isAnyNodeOver() {
+          let r = false
+          const el = e.target as HTMLElement
+          if (el) {
+            for (const parent of walkParentsGenerator(el, 'parentElement', { withSelf: true })) {
+              if (parent.hasAttribute('data-node-box')) {
+                r = true
+                break
+              }
+              if (parent === rootRef.current) {
+                break
+              }
+            }
+          }
+          return r
+        }
       }
       const onDropToRoot: React.DragEventHandler<HTMLElement> = (e) => {
         if (isExternal && !props.onExternalDrag?.(e)) {
           return
         }
-        let customized = false
+        // let customized = false
         if (placeholder) {
-          const { index: targetIndexInSiblings } = placeholder
-          if (props.onDrop?.(e, placeholder.parentStat, targetIndexInSiblings, isExternal) === false) {
-            customized = true
-          }
-          if (!customized && !isExternal) {
-            let targetIndexInSiblings = placeholder.index
-            if (placeholder.parentStat === draggedStat.parentStat && draggedStat.index < targetIndexInSiblings) {
-              targetIndexInSiblings--
-            }
-            const newData = [...props.data];
-            if (props.dataType === 'flat') {
-              const targetParentId = placeholder.parentStat?.id ?? null
-              const removed = removeByIdInFlatData(newData, draggedStat.id, flatOpt)
-              const newNode = { ...draggedStat.node, [PID]: targetParentId }
-              removed[0] = newNode
-              const targetTreeIndex = convertIndexToTreeIndexInFlatData(newData, targetParentId, targetIndexInSiblings, flatOpt)
-              newData.splice(targetTreeIndex, 0, ...removed)
-            } else {
-              // treeData
-              // copy data
-              const newNodeCache = new Map<T, T>()
-              const copyNode = (stat: Stat<T> | null) => {
-                if (!stat) {
-                  return newData
-                }
-                const siblings = copyNode(stat.parentStat)
-                let children = [...stat.children];
-                const newNode = newNodeCache.get(stat.node) || { ...stat.node, [CHILDREN]: children }
-                newNodeCache.set(stat.node, newNode)
-                children = newNode[CHILDREN];
-                siblings[stat.index] = newNode;
-                return children
-              }
-              const newSiblingsOfDragged = copyNode(draggedStat.parentStat)
-              const newSiblingsOfTarget = placeholder.parentStat === draggedStat.parentStat ? newSiblingsOfDragged : copyNode(placeholder.parentStat)
-              // remove
-              newSiblingsOfDragged.splice(draggedStat.index, 1)
-              // add
-              newSiblingsOfTarget.splice(targetIndexInSiblings, 0, draggedStat.node)
-            }
-            props.onChange!(newData)
-          }
-        }
-        if (!customized) {
           e.preventDefault();
+          if (isExternal) {
+            const { index: targetIndexInSiblings } = placeholder
+            props.onDrop?.(e, placeholder.parentStat, targetIndexInSiblings, isExternal)
+          }
         }
-        resetDragStates()
       }
-      if (onDragEndRef.current) {
-        // update dragEnd handler
-        // @ts-ignore
-        window.removeEventListener('dragend', onDragEndRef.current);
-        // @ts-ignore
-        window.addEventListener('dragend', onDragEndInWindow);
-        // @ts-ignore
-        onDragEndRef.current = onDragEndInWindow
-      }
-      function onDragEndInWindow(e: React.DragEvent<Window>) {
-        // listen dragend. dragend only trigger in dragstart window
-        onDragEndRef.current = undefined
-        // @ts-ignore
-        window.removeEventListener('dragend', onDragEndInWindow);
-        const isOutside = Boolean(draggedStat)
-        props.onDragEnd?.(e, isOutside)
-        resetDragStates()
-      }
-      function resetDragStates() {
+      function onDragEndOnRoot(e: React.DragEvent<HTMLElement>) {
+        // draggedStat may not be null. This condition is tell typescript that.
+        if (!draggedStat) {
+          return
+        }
+        // listen dragend. dragend only trigger in dragstart node
+        const isOutside = !placeholder // placeholder is removed if dragleave the tree
+        const customized = props.onDragEnd?.(e, draggedStat!, isOutside) === false
+        if (!customized && !isOutside) {
+          let targetIndexInSiblings = placeholder.index
+          if (placeholder.parentStat === draggedStat.parentStat && draggedStat.index < targetIndexInSiblings) {
+            targetIndexInSiblings--
+          }
+          const newData = [...props.data];
+          if (props.dataType === 'flat') {
+            const targetParentId = placeholder.parentStat?.id ?? null
+            const removed = removeByIdInFlatData(newData, draggedStat.id, flatOpt)
+            const newNode = { ...draggedStat.node, [PID]: targetParentId }
+            removed[0] = newNode
+            const targetTreeIndex = convertIndexToTreeIndexInFlatData(newData, targetParentId, targetIndexInSiblings, flatOpt)
+            newData.splice(targetTreeIndex, 0, ...removed)
+          } else {
+            // treeData
+            // copy data
+            const newNodeCache = new Map<T, T>()
+            const copyNode = (stat: Stat<T> | null) => {
+              if (!stat) {
+                return newData
+              }
+              const siblings = copyNode(stat.parentStat)
+              let children = [...stat.children];
+              const newNode = newNodeCache.get(stat.node) || { ...stat.node, [CHILDREN]: children }
+              newNodeCache.set(stat.node, newNode)
+              children = newNode[CHILDREN];
+              siblings[stat.index] = newNode;
+              return children
+            }
+            const newSiblingsOfDragged = copyNode(draggedStat.parentStat)
+            const newSiblingsOfTarget = placeholder.parentStat === draggedStat.parentStat ? newSiblingsOfDragged : copyNode(placeholder.parentStat)
+            // remove
+            newSiblingsOfDragged.splice(draggedStat.index, 1)
+            // add
+            newSiblingsOfTarget.splice(targetIndexInSiblings, 0, draggedStat.node)
+          }
+          props.onChange!(newData)
+        }
         setDragOverStat(undefined);
         setDraggedStat(undefined);
         setPlaceholder(undefined);
@@ -578,7 +566,7 @@ export function useHeTree<T extends Record<string, any>>(
         }
         return index
       }
-      return { visibleIds, attrsList, onDragOverRoot, onDropToRoot }
+      return { visibleIds, attrsList, onDragOverRoot, onDropToRoot, onDragEndOnRoot }
     }, [mainCache, indent, draggedStat,
     // watch placeholder position
     placeholder?.parentStat, placeholder?.index,
@@ -587,7 +575,36 @@ export function useHeTree<T extends Record<string, any>>(
     // watch func
     ...([props.canDrop, props.canDropToRoot, props.customDragImage, props.onDragStart, props.onDragOver, props.onExternalDrag, props.onDrop, props.onDragEnd, props.onChange].map(func => isFunctionReactive && func)),
   ])
-  const { visibleIds, attrsList, onDragOverRoot, onDropToRoot } = cacheForVisible
+  // listen dragover on window
+  const t2 = useMemo(() => {
+    return {
+      getEl: () => window,
+      onDragOverWindow: (e: DragEvent) => {
+        if (!isInTree()) {
+          setDragOverStat(undefined)
+          if (!props.keepPlaceholder) {
+            setPlaceholder(undefined)
+          }
+        }
+        function isInTree() {
+          let inTree = false
+          let el = e.target as HTMLElement
+          if (el) {
+            for (const parent of walkParentsGenerator(el, 'parentElement', { withSelf: true })) {
+              if (parent === rootRef.current) {
+                inTree = true
+                break
+              }
+            }
+          }
+          return inTree
+        }
+      },
+    }
+  }, [props.keepPlaceholder])
+  useAddEventListener(t2.getEl, 'dragover', t2.onDragOverWindow)
+  // 
+  const { visibleIds, attrsList, onDragOverRoot, onDropToRoot, onDragEndOnRoot } = cacheForVisible
   const persistentIndices = useMemo(() => draggedStat ? [visibleIds.indexOf(draggedStat.id)] : [], [draggedStat, visibleIds]);
   // render
   const renderHeTree = useMemo(
@@ -603,8 +620,8 @@ export function useHeTree<T extends Record<string, any>>(
           }
           // 
           cached = (
-            <div className="he-tree" onDragOver={onDragOverRoot} onDrop={onDropToRoot}>
-              <VirtualList<Id> ref={virtualList} items={visibleIds} virtual={false} persistentIndices={persistentIndices}
+            <div className={`he-tree`} ref={rootRef} onDragOver={onDragOverRoot} onDrop={onDropToRoot} onDragEnd={onDragEndOnRoot}>
+              <VirtualList<Id> ref={virtualListRef} items={visibleIds} virtual={false} persistentIndices={persistentIndices}
                 renderItem={(id, index) => renderNodeBox({
                   stat: getStat(id)!, attrs: attrsList[index], isPlaceholder: id === placeholderId
                 })}
@@ -624,7 +641,7 @@ export function useHeTree<T extends Record<string, any>>(
     // 
     visibleIds, attrsList,
     // ref
-    virtualList,
+    virtualListRef,
     // drag states
     draggedStat, dragOverStat, placeholder, isExternal,
     // render
@@ -1127,4 +1144,15 @@ export function updateCheckedInTreeData<T extends Record<Id, any>>(
 // private methods
 function calculateDistance(x1: number, y1: number, x2: number, y2: number) {
   return Math.sqrt(Math.pow((x2 - x1), 2) + Math.pow((y2 - y1), 2));
+}
+function useAddEventListener(targetGetter: () => HTMLElement | Document | Window, listenerName: string, listener: Function) {
+  useLayoutEffect(() => {
+    const target = targetGetter();
+    // @ts-ignore
+    target?.addEventListener(listenerName, listener);
+    return () => {
+      // @ts-ignore
+      target?.removeEventListener(listenerName, listener);
+    }
+  }, [targetGetter, listenerName, listener])
 }
