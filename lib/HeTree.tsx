@@ -49,6 +49,7 @@ export const defaultProps = {
   dragOpenDelay: 600,
   placeholderId: '__DRAG_PLACEHOLDER__',
   dataType: 'flat' as 'tree' | 'flat',
+  direction: 'ltr' as 'ltr' | 'rtl',
 }
 
 export interface HeTreeProps<T extends Record<string, any>> extends Partial<typeof defaultProps> {
@@ -84,6 +85,7 @@ export function useHeTree<T extends Record<string, any>>(
   if (!props.renderNode && !props.renderNodeBox) {
     throw new Error("Either renderNodeBox or renderNode is required.");
   }
+  const rtl = props.direction === 'rtl'
   const openIdsStr = useMemo(() => props.openIds ? [...props.openIds].sort().toString() : '', [props.openIds])
   const openIdSet = useMemo(() => new Set(props.openIds), [openIdsStr])
   const checkedIdsStr = useMemo(() => props.checkedIds ? [...props.checkedIds].sort().toString() : '', [props.checkedIds])
@@ -263,7 +265,7 @@ export function useHeTree<T extends Record<string, any>>(
         return {
           key: stat.id,
           draggable: stat.draggable,
-          style: { paddingLeft: (stat.level - 1) * indent + 'px' },
+          style: { [`padding${!rtl ? 'Left' : 'Right'}`]: (stat.level - 1) * indent + 'px' },
           'data-key': stat.id + '',
           'data-level': stat.level + '',
           'data-node-box': true,
@@ -280,8 +282,8 @@ export function useHeTree<T extends Record<string, any>>(
               props.customDragImage(e, stat)
             } else {
               // setDragImage
-              const node = nodeBox.children[0]
-              e.dataTransfer.setDragImage(node, 0, 0);
+              const node = nodeBox.children[0] as HTMLElement
+              e.dataTransfer.setDragImage(node, !rtl ? 0 : node.offsetWidth, 0);
             }
             setTimeout(() => {
               setDraggedStat(stat)
@@ -324,6 +326,7 @@ export function useHeTree<T extends Record<string, any>>(
               }
             }
             if (shouldDragOpen()) {
+              // TODO
               // props.onDragOpen!(stat)
             }
             // dragOpen end ========================
@@ -335,9 +338,18 @@ export function useHeTree<T extends Record<string, any>>(
             // @ts-ignore
             const nodeBox = hp.findParent(e.target, (el) => el.hasAttribute('data-node-box'), { withSelf: true })
             // node start position
-            const nodeX = nodeBox.getBoundingClientRect().x
-            let placeholderLevel = Math.ceil((e.pageX - nodeX) / indent) // use this number to detect placeholder position. >= 0: prepend. < 0: after.}
-            placeholderLevel = hp.between(placeholderLevel, 0, (closest?.level || 0) + 1)
+            const getPlaceholderLevel = () => {
+              let rect = nodeBox.getBoundingClientRect()
+              let pl
+              if (!rtl) {
+                // ltr
+                pl = Math.ceil((e.pageX - rect.x) / indent)
+              } else {
+                pl = Math.ceil((rect.right - e.pageX) / indent)
+              }
+              return hp.between(pl, 0, (closest?.level || 0) + 1)
+            }
+            let placeholderLevel = getPlaceholderLevel() // use this number to detect placeholder position. >= 0: prepend. < 0: after.}
             if (!atTop && !isPlaceholder && closest.id === rootIds[0]) {
               // check if at top
               const topNodeElement = rootEl.querySelector(`[data-key="${closest.id}"]`)
@@ -569,7 +581,7 @@ export function useHeTree<T extends Record<string, any>>(
     // watch placeholder position
     placeholder?.parentStat, placeholder?.index,
     // watch props
-    indent, placeholderId,
+    indent, placeholderId, rtl,
     // watch func
     ...([props.canDrop, props.canDropToRoot, props.customDragImage, props.onDragStart, props.onDragOver, props.onExternalDrag, props.onDrop, props.onDragEnd, props.onChange].map(func => isFunctionReactive && func)),
   ])
