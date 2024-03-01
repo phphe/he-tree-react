@@ -60,6 +60,8 @@
     "jsdom": "^24.0.0",
     "react-router-dom": "^6.22.2",
     "react-test-renderer": "^18.2.0",
+    "typedoc": "^0.25.9",
+    "typedoc-plugin-inline-sources": "^1.0.2",
     "typescript": "^5.2.2",
     "unocss": "^0.58.4",
     "use-immer": "^0.9.0",
