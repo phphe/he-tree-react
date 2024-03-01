@@ -274,8 +274,7 @@ export function useHeTree<T extends Record<string, any>>(
               return
             }
             // 
-            e.dataTransfer!.setData("text", "he-tree"); // set data to work in Chrome Android
-            // TODO 拖拽类型识别
+            e.dataTransfer!.setData("text/plain", "he-tree he-tree-react"); // set data to work in Chrome Android
             e.dataTransfer!.dropEffect = 'move'
             const nodeBox = hp.findParent(e.target as HTMLElement, (el) => el.hasAttribute('data-node-box'), { withSelf: true })
             if (props.customDragImage) {
