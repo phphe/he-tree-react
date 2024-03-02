@@ -67,4 +67,4 @@ export default function App() {
 ## 基础使用-平面数据
 
 <<< @/../src/pages/base_flat_data.tsx
-<DemoIframe url="/base_tree_data" />
+<DemoIframe url="/base_flat_data" />
