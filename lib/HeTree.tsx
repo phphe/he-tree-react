@@ -49,6 +49,7 @@ export const defaultProps = {
   placeholderId: '__DRAG_PLACEHOLDER__',
   dataType: 'flat' as 'tree' | 'flat',
   direction: 'ltr' as 'ltr' | 'rtl',
+  rootId: null as Id | null,
 }
 
 export interface HeTreeProps<T extends Record<string, any>> extends Partial<typeof defaultProps> {
@@ -483,7 +484,7 @@ export function useHeTree<T extends Record<string, any>>(
           }
           const newData = [...props.data];
           if (props.dataType === 'flat') {
-            const targetParentId = placeholder.parentStat?.id ?? null
+            const targetParentId = placeholder.parentStat?.id ?? props.rootId
             const removed = removeByIdInFlatData(newData, draggedStat.id, flatOpt)
             const newNode = { ...draggedStat.node, [PID]: targetParentId }
             removed[0] = newNode
@@ -580,7 +581,7 @@ export function useHeTree<T extends Record<string, any>>(
     // watch placeholder position
     placeholder?.parentStat, placeholder?.index,
     // watch props
-    indent, placeholderId, rtl,
+    indent, placeholderId, rtl, props.rootId,
     // watch func
     ...([props.canDrop, props.canDropToRoot, props.customDragImage, props.onDragStart, props.onDragOver, props.onExternalDrag, props.onDrop, props.onDragEnd, props.onChange].map(func => isFunctionReactive && func)),
   ])
