@@ -59,6 +59,9 @@ export default function PageLayout(props: {}) {
       .main-menu a{
         text-decoration: none;
       }
+      .main-menu a.active{
+        font-weight: bold;
+      }
       .main-menu a:hover{
         text-decoration: underline;
       }

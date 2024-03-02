@@ -1,10 +1,55 @@
-import { createFlatData } from './_data'
 import { useHeTree, sortFlatData } from "he-tree-react";
 import { useState } from 'react';
 
 export default function BasePage() {
   const keys = { idKey: 'id', parentIdKey: 'parent_id' };
-  const [data, setdata] = useState(() => sortFlatData(createFlatData(), keys));
+  const [data, setdata] = useState(() => sortFlatData([
+    {
+      id: 1,
+      parent_id: null,
+      name: "Root Category",
+    },
+    {
+      id: 2,
+      parent_id: 1,
+      name: "Technology",
+    },
+    {
+      id: 5,
+      parent_id: 2,
+      name: "Hardware",
+    },
+    {
+      id: 10,
+      parent_id: 5,
+      name: "Computer Components",
+    },
+    {
+      id: 4,
+      parent_id: 2,
+      name: "Programming",
+    },
+    {
+      id: 8,
+      parent_id: 4,
+      name: "Python",
+    },
+    {
+      id: 3,
+      parent_id: 1,
+      name: "Science",
+    },
+    {
+      id: 7,
+      parent_id: 3,
+      name: "Biology",
+    },
+    {
+      id: 6,
+      parent_id: 3,
+      name: "Physics",
+    },
+  ], keys));
   const { renderHeTree } = useHeTree({
     ...keys,
     data,
@@ -14,7 +59,7 @@ export default function BasePage() {
       {node.name}
     </div>,
   })
-  return <div style={{ width: '300px', border: '1px solid #ccc', padding: '10px' }}>
-    {renderHeTree()}
+  return <div>
+    {renderHeTree({ style: { width: '300px', border: '1px solid #555', padding: '20px' } })}
   </div>
 }

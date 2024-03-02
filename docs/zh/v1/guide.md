@@ -68,3 +68,8 @@ export default function App() {
 
 <<< @/../src/pages/base_flat_data.tsx
 <DemoIframe url="/base_flat_data" />
+
+## 基础使用-树形数据
+
+<<< @/../src/pages/base_tree_data.tsx
+<DemoIframe url="/base_tree_data" />
