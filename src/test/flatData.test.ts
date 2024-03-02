@@ -1,4 +1,6 @@
+import { loadConfigFromFile } from "vite";
 import {
+  sortFlatData,
   walkFlatDataGenerator,
   walkFlatData,
   convertIndexToTreeIndexInFlatData,
@@ -8,6 +10,14 @@ import {
   updateCheckedInFlatData,
 } from "../../lib/HeTree";
 
+test("sortFlatData", () => {
+  let data = createData();
+  data.unshift({ id: 12, parent_id: 11, name: "12" });
+  data.unshift({ id: 11, parent_id: 1, name: "11" });
+  data = sortFlatData(data);
+  expect(data[1].id).toBe(11);
+  expect(data[2].id).toBe(12);
+});
 test("walkFlatDataGenerator: node, treeIndex", () => {
   let data = createData();
   for (const [
