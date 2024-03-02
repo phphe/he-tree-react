@@ -1,5 +1,5 @@
 import { createFlatData } from './_data'
-import { useHeTree, sortFlatData } from "../../lib/index";
+import { useHeTree, sortFlatData } from "he-tree-react";
 import { useState } from 'react';
 
 export default function BasePage() {

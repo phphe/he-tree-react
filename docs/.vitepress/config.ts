@@ -4,6 +4,7 @@ import { defineConfig } from "vitepress";
 export default defineConfig({
   title: "He Tree React",
   description: "A VitePress Site",
+  cleanUrls: true,
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [
@@ -26,6 +27,16 @@ export default defineConfig({
     ],
   },
   markdown: {
-    lineNumbers: true,
+    // lineNumbers: true,
+  },
+  locales: {
+    root: {
+      label: "English",
+      lang: "en",
+    },
+    zh: {
+      label: "中文",
+      lang: "zh",
+    },
   },
 });
