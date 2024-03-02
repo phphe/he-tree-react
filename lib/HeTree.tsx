@@ -622,35 +622,24 @@ export function useHeTree<T extends Record<string, any>>(
   const { visibleIds, attrsList, onDragOverRoot, onDropToRoot, onDragEndOnRoot } = cacheForVisible
   const persistentIndices = useMemo(() => draggedStat ? [visibleIds.indexOf(draggedStat.id)] : [], [draggedStat, visibleIds]);
   // render
-  const renderHeTree = useMemo(
-    () => {
-      let cached: ReactNode
-      return () => {
-        if (!cached) {
-          let renderNodeBox = props.renderNodeBox!
-          if (!renderNodeBox) {
-            const placeholder = <div className="he-tree-drag-placeholder" style={{ minHeight: '20px', border: '1px dashed blue' }}></div>
-            renderNodeBox = ({ stat, attrs, isPlaceholder }) => <div {...attrs}>
-              {isPlaceholder ? placeholder : props.renderNode!(stat)}
-            </div>
-          }
-          // 
-          cached = (
-            <div className={`he-tree`} ref={rootRef} onDragOver={onDragOverRoot} onDrop={onDropToRoot} onDragEnd={onDragEndOnRoot}>
-              <VirtualList<Id> ref={virtualListRef} items={visibleIds} virtual={false} persistentIndices={persistentIndices}
-                renderItem={(id, index) => renderNodeBox({
-                  stat: getStat(id)!, attrs: attrsList[index], isPlaceholder: id === placeholderId
-                })}
-              />
-            </div>
-          )
-        }
-        return cached
-      }
-    }, [cacheForVisible.visibleIds,
-    isFunctionReactive && props.renderNode,
-    isFunctionReactive && props.renderNodeBox,
-  ]);
+  const renderHeTree = (options?: { className?: string, style?: React.CSSProperties }) => {
+    let renderNodeBox = props.renderNodeBox!
+    if (!renderNodeBox) {
+      const placeholder = <div className="he-tree-drag-placeholder" style={{ minHeight: '20px', border: '1px dashed blue' }}></div>
+      renderNodeBox = ({ stat, attrs, isPlaceholder }) => <div {...attrs}>
+        {isPlaceholder ? placeholder : props.renderNode!(stat)}
+      </div>
+    }
+    return (
+      <div className={`he-tree ${options?.className || ''}`} style={options?.style} ref={rootRef} onDragOver={onDragOverRoot} onDrop={onDropToRoot} onDragEnd={onDragEndOnRoot}>
+        <VirtualList<Id> ref={virtualListRef} items={visibleIds} virtual={false} persistentIndices={persistentIndices}
+          renderItem={(id, index) => renderNodeBox({
+            stat: getStat(id)!, attrs: attrsList[index], isPlaceholder: id === placeholderId
+          })}
+        />
+      </div>
+    )
+  }
 
   return {
     ...mainCache,
