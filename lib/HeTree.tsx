@@ -418,6 +418,11 @@ export function useHeTree<T extends Record<string, any>>(
         }
       }
       const onDragOverRoot: React.DragEventHandler<HTMLElement> = (e) => {
+        // ignore if placeholder exists
+        if (placeholder) {
+          e.preventDefault(); // droppable
+          return
+        }
         // ignore if has visible tree node
         if (visibleIds.length > 0) {
           return
