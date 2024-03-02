@@ -648,7 +648,7 @@ export function useHeTree<T extends Record<string, any>>(
     // ref
     virtualListRef,
     // drag states
-    draggedStat, dragOverStat, placeholder, isExternal,
+    draggedStat, dragOverStat, placeholder,
     // render
     renderHeTree,
   }
