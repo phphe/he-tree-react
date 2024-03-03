@@ -87,7 +87,7 @@ export function useHeTree<T extends Record<string, any>>(
     throw new Error("Either renderNodeBox or renderNode is required.");
   }
   const rtl = props.direction === 'rtl'
-  const openIdsStr = useMemo(() => props.openIds ? [...props.openIds].sort().toString() : '', [props.openIds])
+  const openIdsStr = useMemo(() => props.openIds ? [...props.openIds].sort().toString() : undefined, [props.openIds])
   const openIdSet = useMemo(() => new Set(props.openIds), [openIdsStr])
   const checkedIdsStr = useMemo(() => props.checkedIds ? [...props.checkedIds].sort().toString() : '', [props.checkedIds])
   const checkedIdSet = useMemo(() => new Set(props.checkedIds), [checkedIdsStr])
@@ -101,6 +101,7 @@ export function useHeTree<T extends Record<string, any>>(
       const rootIds: Id[] = []
       const rootNodes: T[] = []
       const rootStats: Stat<T>[] = []
+      const allIds: Id[] = []
       // 
       function* simpleWalk() {
         if (props.dataType === 'flat') {
@@ -116,6 +117,7 @@ export function useHeTree<T extends Record<string, any>>(
       let count = 0
       for (const [node, info] of simpleWalk()) {
         const id: Id = node[ID] ?? count
+        allIds.push(id)
         let pid = node[PID] as Id
         if (props.dataType === 'tree') {
           pid = info.parent?.[ID] ?? null
@@ -186,6 +188,8 @@ export function useHeTree<T extends Record<string, any>>(
       return {
         // root
         rootIds, rootNodes, rootStats,
+        // 
+        allIds,
         // methods
         getStat,
       }
