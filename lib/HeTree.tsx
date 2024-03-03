@@ -72,7 +72,6 @@ export interface HeTreeProps<T extends Record<string, any>> extends Partial<type
   onDragOpen?: (stat: Stat<T>) => void,
   openIds?: Id[],
   checkedIds?: Id[],
-  semiCheckedIds?: Id[],
 }
 
 export function useHeTree<T extends Record<string, any>>(
@@ -89,8 +88,6 @@ export function useHeTree<T extends Record<string, any>>(
   const openIdSet = useMemo(() => new Set(props.openIds), [openIdsStr])
   const checkedIdsStr = useMemo(() => props.checkedIds ? [...props.checkedIds].sort().toString() : '', [props.checkedIds])
   const checkedIdSet = useMemo(() => new Set(props.checkedIds), [checkedIdsStr])
-  const semiCheckedIdStr = useMemo(() => props.semiCheckedIds ? [...props.semiCheckedIds].sort().toString() : '', [props.semiCheckedIds])
-  const semiCheckedIdSet = useMemo(() => new Set(props.semiCheckedIds), [semiCheckedIdStr])
   // mainCache ==================================
   const mainCache = useMemo(
     () => {
@@ -153,7 +150,7 @@ export function useHeTree<T extends Record<string, any>>(
           index,
           level,
           open: props.openIds ? openIdSet.has(id) : true,
-          checked: checkedIdSet.has(id) ? true : (semiCheckedIdSet.has(id) ? null : false),
+          checked: checkedIdSet.has(id),
           draggable: false,
         }
         stats[id] = stat
