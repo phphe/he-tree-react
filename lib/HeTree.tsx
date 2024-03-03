@@ -275,10 +275,22 @@ export function useHeTree<T extends Record<string, any>>(
               e.preventDefault() // prevent drag
               return
             }
+            let trigger: Element
+            const nodeBox = hp.findParent(e.target as HTMLElement, (el) => {
+              if (!trigger && el.hasAttribute('draggable')) {
+                trigger = el
+              }
+              return el.hasAttribute('data-node-box')
+            }, { withSelf: true })
+            let hasChildTrigger = nodeBox.querySelector(`[draggable]`)
+            if (hasChildTrigger && trigger! === nodeBox) {
+              // has child trigger but triggered by node box
+              e.preventDefault() // prevent drag
+              return
+            }
             // 
             e.dataTransfer!.setData("text/plain", "he-tree he-tree-react"); // set data to work in Chrome Android
             e.dataTransfer!.dropEffect = 'move'
-            const nodeBox = hp.findParent(e.target as HTMLElement, (el) => el.hasAttribute('data-node-box'), { withSelf: true })
             if (props.customDragImage) {
               props.customDragImage(e, stat)
             } else {
