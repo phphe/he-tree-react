@@ -320,9 +320,10 @@ export function useHeTree<T extends Record<string, any>>(
               if (isPlaceholder) {
                 return false
               }
-              if (!stat.open) {
+              if (stat.open) {
                 return false
               }
+
               const refresh = () => Object.assign(dragOverInfo, { id: stat.id, x: e.pageX, y: e.pageY, time: Date.now() })
               if (dragOverInfo.id !== stat.id) {
                 refresh()
