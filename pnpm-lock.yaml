@@ -52,6 +52,9 @@ devDependencies:
   eslint-plugin-react-refresh:
     specifier: ^0.4.5
     version: 0.4.5(eslint@8.56.0)
+  immer:
+    specifier: ^10.0.3
+    version: 10.0.3
   jsdom:
     specifier: ^24.0.0
     version: 24.0.0

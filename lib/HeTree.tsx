@@ -50,6 +50,7 @@ export const defaultProps = {
   dataType: 'flat' as 'tree' | 'flat',
   direction: 'ltr' as 'ltr' | 'rtl',
   rootId: null as Id | null,
+  virtual: false,
 }
 
 export interface HeTreeProps<T extends Record<string, any>> extends Partial<typeof defaultProps> {
@@ -648,7 +649,7 @@ export function useHeTree<T extends Record<string, any>>(
     }
     return (
       <div className={`he-tree ${options?.className || ''}`} style={options?.style} ref={rootRef} onDragOver={onDragOverRoot} onDrop={onDropToRoot} onDragEnd={onDragEndOnRoot}>
-        <VirtualList<Id> ref={virtualListRef} items={visibleIds} virtual={false} persistentIndices={persistentIndices}
+        <VirtualList<Id> ref={virtualListRef} items={visibleIds} virtual={props.virtual} persistentIndices={persistentIndices} style={{ height: '100%' }}
           renderItem={(id, index) => renderNodeBox({
             stat: getStat(id)!, attrs: attrsList[index], isPlaceholder: id === placeholderId
           })}

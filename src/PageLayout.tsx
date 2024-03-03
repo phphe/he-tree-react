@@ -22,6 +22,50 @@ export default function PageLayout(props: {}) {
       path: '/base_tree_data',
     },
     {
+      title: 'Custom Drag Trigger',
+      path: '/custom_drag_trigger_flat_data',
+    },
+    {
+      title: 'Open',
+      path: '/open_ids',
+    },
+    {
+      title: 'Checked',
+      path: '/checked_ids',
+    },
+    {
+      title: 'Update Data',
+      path: '/update_data',
+    },
+    {
+      title: 'Update Flat Data With Immer',
+      path: '/update_flat_data_with_immer',
+    },
+    {
+      title: 'Update Tree Data With Immer',
+      path: '/update_tree_data_with_immer',
+    },
+    {
+      title: 'Customize Placeholder and Node Box',
+      path: '/customize_placeholder_and_node_box',
+    },
+    {
+      title: 'Draggable & Droppable',
+      path: '/draggable_droppable'
+    },
+    {
+      title: 'Open Node when Drag over',
+      path: '/dragopen'
+    },
+    {
+      title: 'Drag and Drop to External',
+      path: '/external_drag'
+    },
+    {
+      title: 'Big Data with Virtual List',
+      path: '/virtual_list'
+    },
+    {
       title: 'Home',
       path: '/',
     },
