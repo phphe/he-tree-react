@@ -25,7 +25,7 @@ export interface Stat<T> {
   draggable: boolean,
 }
 
-export type NodeAttrs = { 'data-key': string, 'data-level': string, 'data-node-box': boolean, 'data-drag-placeholder'?: boolean } & React.HTMLProps<HTMLDivElement>
+export type NodeAttrs = { 'data-key': string, 'data-level': string, 'data-node-box': boolean, 'data-drag-placeholder'?: boolean, 'data-dragging'?: boolean } & React.HTMLProps<HTMLDivElement>
 
 // single instance ==================================
 const dragOverInfo = {
@@ -217,6 +217,7 @@ export function useHeTree<T extends Record<string, any>>(
             zIndex: '-999999999',
             visibility: 'hidden',
           })
+          attrs['data-dragging'] = true
         }
         attrsList.push(attrs)
         visibleIds.push(stat.id)
@@ -308,122 +309,6 @@ export function useHeTree<T extends Record<string, any>>(
             }, 0)
             props.onDragStart?.(e, stat)
           },
-          onDragOver(e) {
-            if (isExternal && !props.onExternalDragOver?.(e)) {
-              return
-            }
-            // dragOpen ========================
-            const shouldDragOpen = () => {
-              if (!props.dragOpen) {
-                return false
-              }
-              if (isPlaceholder) {
-                return false
-              }
-              if (stat.open) {
-                return false
-              }
-
-              const refresh = () => Object.assign(dragOverInfo, { id: stat.id, x: e.pageX, y: e.pageY, time: Date.now() })
-              if (dragOverInfo.id !== stat.id) {
-                refresh()
-                return false
-              }
-              if (calculateDistance(e.pageX, e.pageY, dragOverInfo.x, dragOverInfo.y) > 10) {
-                refresh()
-                return false
-              }
-              const now = Date.now()
-              if (now - dragOverInfo.time >= props.dragOpenDelay!) {
-                return true
-              }
-            }
-            if (shouldDragOpen()) {
-              props.onDragOpen!(stat)
-            }
-            // dragOpen end ========================
-            let t = findClosestAndNext(stat, isPlaceholder)
-            const { closest, next } = t
-
-            let { atTop } = t
-            const rootEl = rootRef.current!
-            // @ts-ignore
-            const nodeBox = hp.findParent(e.target, (el) => el.hasAttribute('data-node-box'), { withSelf: true })
-            // node start position
-            const getPlaceholderLevel = () => {
-              let rect = nodeBox.getBoundingClientRect()
-              let pl
-              if (!rtl) {
-                // ltr
-                pl = Math.ceil((e.pageX - rect.x) / indent)
-              } else {
-                pl = Math.ceil((rect.right - e.pageX) / indent)
-              }
-              return hp.between(pl, 0, (closest?.level || 0) + 1)
-            }
-            let placeholderLevel = getPlaceholderLevel() // use this number to detect placeholder position. >= 0: prepend. < 0: after.}
-            if (!atTop && !isPlaceholder && closest.id === rootIds[0]) {
-              // check if at top
-              const topNodeElement = rootEl.querySelector(`[data-key="${closest.id}"]`)
-              if (topNodeElement) {
-                const rect = topNodeElement.getBoundingClientRect()
-                atTop = rect.y + rect.height / 2 > e.pageY
-              }
-            }
-            if (atTop) {
-              placeholderLevel = 0
-            }
-            //
-            let newPlaceholder: typeof placeholder
-            if (atTop) {
-              newPlaceholder = {
-                ...placeholder!,
-                parentStat: null,
-                level: 1,
-                index: 0,
-              }
-            } else {
-              const parentMinLevel = next ? next.level - 1 : 0
-              // find all droppable positions
-              const availablePositionsLeft: { parentStat: Stat<T>, index: number }[] = [];
-              const availablePositionsRight: typeof availablePositionsLeft = [];
-              let cur = closest
-              const curLevel = () => cur ? cur.level : 0
-              while (curLevel() >= parentMinLevel) {
-                const index = getTargetIndex(cur, next)
-                if (getDroppable(cur, index)) {
-                  (placeholderLevel > curLevel() ? availablePositionsLeft : availablePositionsRight).unshift({
-                    parentStat: cur,
-                    index,
-                  })
-                }
-                if (!cur) {
-                  break
-                }
-                cur = cur.parentStat!
-              }
-              let placeholderPosition = hp.arrayLast(availablePositionsLeft)
-              if (!placeholderPosition) {
-                placeholderPosition = hp.arrayFirst(availablePositionsRight)
-              }
-              if (placeholderPosition) {
-                newPlaceholder = {
-                  ...placeholder!,
-                  parentStat: placeholderPosition.parentStat,
-                  level: (placeholderPosition.parentStat?.level ?? 0) + 1,
-                  index: placeholderPosition.index,
-                }
-              } else {
-                // 
-              }
-            }
-            setPlaceholder(newPlaceholder)
-            if (newPlaceholder) {
-              e.preventDefault(); // call mean droppable
-            }
-            setDragOverStat(isPlaceholder ? undefined : stat)
-            props.onDragOver?.(e, stat, isExternal)
-          },
           onDragLeave(e) {
             // dragLeave behavior is not expected. https://stackoverflow.com/questions/7110353/html5-dragleave-fired-when-hovering-a-child-element
           },
@@ -433,34 +318,159 @@ export function useHeTree<T extends Record<string, any>>(
         if (isExternal && !props.onExternalDragOver?.(e)) {
           return
         }
-        if (getDroppable(null, 0)) {
-          setPlaceholder({
-            ...placeholder!,
-            parentStat: null,
-            level: 1,
-            index: 0,
-          })
-          e.preventDefault(); // droppable
-        }
-        function isAnyNodeOver() {
-          let r = false
-          const el = e.target as HTMLElement
-          if (el) {
-            for (const parent of walkParentsGenerator(el, 'parentElement', { withSelf: true })) {
-              if (parent.hasAttribute('data-node-box')) {
-                r = true
-                break
-              }
-              if (parent === rootRef.current) {
-                break
-              }
+        const el = getClosestEl()
+        if (el) {
+          // @ts-ignore
+          const stat = getStat(el.getAttribute('data-key'))
+          const isPlaceholder = !!el.getAttribute('data-drag-placeholder')
+          if (shouldDragOpen(stat, isPlaceholder)) {
+            props.onDragOpen!(stat)
+          }
+          let t = findClosestAndNext(stat, isPlaceholder)
+          const { closest, next } = t
+          let { atTop } = t
+          const rootEl = rootRef.current!
+          // @ts-ignore
+          const nodeBox = el
+          // node start position
+          const getPlaceholderLevel = () => {
+            let rect = nodeBox.getBoundingClientRect()
+            let pl
+            if (!rtl) {
+              // ltr
+              pl = Math.ceil((e.pageX - rect.x) / indent)
+            } else {
+              pl = Math.ceil((rect.right - e.pageX) / indent)
+            }
+            return hp.between(pl, 0, (closest?.level || 0) + 1)
+          }
+          let placeholderLevel = getPlaceholderLevel() // use this number to detect placeholder position. >= 0: prepend. < 0: after.}
+          if (!atTop && !isPlaceholder && closest.id === rootIds[0]) {
+            // check if at top
+            const topNodeElement = rootEl.querySelector(`[data-key="${closest.id}"]`)
+            if (topNodeElement) {
+              const rect = topNodeElement.getBoundingClientRect()
+              atTop = rect.y + rect.height / 2 > e.pageY
             }
           }
-          return r
+          if (atTop) {
+            placeholderLevel = 0
+          }
+          //
+          let newPlaceholder: typeof placeholder
+          if (atTop) {
+            if (getDroppable(null, 0)) {
+              newPlaceholder = {
+                ...placeholder!,
+                parentStat: null,
+                level: 1,
+                index: 0,
+              }
+            }
+          } else {
+            const parentMinLevel = next ? next.level - 1 : 0
+            // find all droppable positions
+            const availablePositionsLeft: { parentStat: Stat<T>, index: number }[] = [];
+            const availablePositionsRight: typeof availablePositionsLeft = [];
+            let cur = closest
+            const curLevel = () => cur ? cur.level : 0
+            while (curLevel() >= parentMinLevel) {
+              const index = getTargetIndex(cur, next)
+              if (getDroppable(cur, index)) {
+                (placeholderLevel > curLevel() ? availablePositionsLeft : availablePositionsRight).unshift({
+                  parentStat: cur,
+                  index,
+                })
+              }
+              if (!cur) {
+                break
+              }
+              cur = cur.parentStat!
+            }
+            let placeholderPosition = hp.arrayLast(availablePositionsLeft)
+            if (!placeholderPosition) {
+              placeholderPosition = hp.arrayFirst(availablePositionsRight)
+            }
+            if (placeholderPosition) {
+              newPlaceholder = {
+                ...placeholder!,
+                parentStat: placeholderPosition.parentStat,
+                level: (placeholderPosition.parentStat?.level ?? 0) + 1,
+                index: placeholderPosition.index,
+              }
+            } else {
+              // 
+            }
+          }
+          setPlaceholder(newPlaceholder)
+          if (newPlaceholder) {
+            e.preventDefault(); // call mean droppable
+          }
+          setDragOverStat(isPlaceholder ? undefined : stat)
+          props.onDragOver?.(e, stat, isExternal)
+        } else {
+          if (getDroppable(null, 0)) {
+            setPlaceholder({
+              ...placeholder!,
+              parentStat: null,
+              level: 1,
+              index: 0,
+            })
+            e.preventDefault(); // droppable
+          }
         }
-        function getCloest() {
+
+        function getClosestEl() {
           const rootEl = rootRef.current as HTMLElement
-          // rootEl.querySelectorAll([])
+          const nodeEls = rootEl.querySelectorAll(`[data-node-box]:not([data-dragging])`);
+          const t = hp.binarySearch(
+            // @ts-ignore
+            nodeEls,
+            (nodeEl: HTMLElement) =>
+              nodeEl.getBoundingClientRect().top -
+              e.pageY,
+            { returnNearestIfNoHit: true }
+          )!;
+          let index: number | undefined
+          if (t.hit) {
+          } else {
+            if (t.greater) {
+              index = t.index - 1;
+              if (index < 0) {
+                index = 0
+              }
+            } else {
+            }
+          }
+          if (index == null) {
+            index = t.index
+          }
+          return nodeEls[index]
+        }
+        function shouldDragOpen(stat: any, isPlaceholder: boolean) {
+          if (!props.dragOpen) {
+            return false
+          }
+          if (isPlaceholder) {
+            return false
+          }
+          if (stat.open) {
+            return false
+          }
+
+          const refresh = () => Object.assign(dragOverInfo, { id: stat.id, x: e.pageX, y: e.pageY, time: Date.now() })
+          if (dragOverInfo.id !== stat.id) {
+            refresh()
+            return false
+          }
+          if (calculateDistance(e.pageX, e.pageY, dragOverInfo.x, dragOverInfo.y) > 10) {
+            refresh()
+            return false
+          }
+          const now = Date.now()
+          if (now - dragOverInfo.time >= props.dragOpenDelay!) {
+            return true
+          }
         }
       }
       const onDropToRoot: React.DragEventHandler<HTMLElement> = (e) => {
@@ -547,7 +557,7 @@ export function useHeTree<T extends Record<string, any>>(
        */
       function findClosestAndNext(stat: Stat<T>, isPlaceholder: boolean) {
         let closest = stat
-        let index = visibleIds.indexOf(stat.id) // index of closest node
+        let index = visibleIds.indexOf(!isPlaceholder ? stat.id : props.placeholderId) // index of closest node
         let atTop = false
         const isPlaceholderOrDraggedNode = (id: Id) => id === placeholderId || getStat(id) === draggingStat
         const find = (startIndex: number, step: number) => {
