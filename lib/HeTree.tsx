@@ -600,7 +600,7 @@ export function useHeTree<T extends Record<string, any>>(
     // watch props
     indent, placeholderId, rtl, props.rootId,
     // watch func
-    ...([props.canDrop, props.canDropToRoot, props.customDragImage, props.onDragStart, props.onDragOver, props.onExternalDrag, props.onDrop, props.onDragEnd, props.onChange].map(func => isFunctionReactive && func)),
+    ...([props.canDrop, props.canDropToRoot, props.customDragImage, props.onDragStart, props.onDragOver, props.onExternalDrag, props.onDrop, props.onDragEnd, props.onChange, props.onDragOpen].map(func => isFunctionReactive && func)),
   ])
   // listen dragover on window
   const t2 = useMemo(() => {
