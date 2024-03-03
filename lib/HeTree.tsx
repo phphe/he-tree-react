@@ -66,10 +66,7 @@ export interface HeTreeProps<T extends Record<string, any>> extends Partial<type
   onDragStart?: (e: React.DragEvent<HTMLElement>, stat: Stat<T>) => void,
   onDragOver?: (e: React.DragEvent<HTMLElement>, stat: Stat<T>, isExternal: boolean) => void,
   onExternalDragOver?: (e: React.DragEvent<HTMLElement>) => boolean,
-  onExternalDrop?: (e: React.DragEvent<HTMLElement>, parentStat: Stat<T> | null, index: number, isExternal: boolean) => void,
-  /**
-   * Call on drag end in the window. If you use draggedStat in the callback, it will be undefined if onExternalDrop alreay triggered.
-   */
+  onExternalDrop?: (e: React.DragEvent<HTMLElement>, parentStat: Stat<T> | null, index: number) => void,
   onDragEnd?: (e: React.DragEvent<HTMLElement>, stat: Stat<T>, isOutside: boolean) => void | boolean,
   onChange: (data: T[]) => void,
   onDragOpen?: (stat: Stat<T>) => void,
@@ -486,7 +483,7 @@ export function useHeTree<T extends Record<string, any>>(
           e.preventDefault();
           if (isExternal) {
             const { index: targetIndexInSiblings } = placeholder
-            props.onExternalDrop?.(e, placeholder.parentStat, targetIndexInSiblings, isExternal)
+            props.onExternalDrop?.(e, placeholder.parentStat, targetIndexInSiblings)
             reset()
           }
         }
