@@ -121,7 +121,7 @@ export default function App() {
 
 上面有两个 div. 使用`renderNode`选项控制内层 div 的渲染. 如: `renderNode: ({node}) => <div>{node.name}</div>`.
 
-外层节点被称为`nodeBox`, 不要修改它的`margin, padding-left, padding-right`, 不要给它的父元素设置`gap`. 如果你想控制`nodeBox`或拖拽占位节点的渲染, 可以使用`renderNodeBox`选项, 这将覆盖`renderNode`. 标准的`renderNodeBox`如下:
+外层节点被称为`nodeBox`, 不要修改它的`margin, padding-left, padding-right`, 不要给它的父元素设置`gap`. 使用选项[`indent`](api#indent)控制节点的缩进. 如果你想控制`nodeBox`或拖拽占位节点的渲染, 可以使用`renderNodeBox`选项, 这将覆盖`renderNode`. 标准的`renderNodeBox`如下:
 
 ```tsx{4-7,9}
 renderNodeBox: ({ stat, attrs, isPlaceholder }) => (
