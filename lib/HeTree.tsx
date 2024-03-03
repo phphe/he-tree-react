@@ -195,19 +195,19 @@ export function useHeTree<T extends Record<string, any>>(
   const { rootIds, rootStats, getStat, } = mainCache;
   // about drag ==================================
   const indent = props.indent!
-  const [draggedStat, setDraggedStat] = useState<Stat<T>>();
+  const [draggingStat, setDraggingStat] = useState<Stat<T>>();
   const [dragOverStat, setDragOverStat] = useState<Stat<T>>();
   const virtualListRef = useRef<VirtualListHandle>(null);
   const rootRef = useRef<HTMLDivElement>(null)
   const [placeholder, setPlaceholder] = useState<{ parentStat: Stat<T> | null, level: number, index: number } | null>();
-  const isExternal = !draggedStat
+  const isExternal = !draggingStat
   const cacheForVisible = useMemo(
     () => {
       const visibleIds: Id[] = []
       const attrsList: NodeAttrs[] = [];
       for (const [stat, { skipChildren }] of walkTreeDataGenerator(rootStats, 'childStats')) {
         const attrs = createAttrs(stat)
-        if (stat === draggedStat) {
+        if (stat === draggingStat) {
           // hide dragged node but don't remove it. Because dragend event won't be triggered if without it.
           Object.assign(attrs.style!, {
             position: 'fixed',
@@ -220,7 +220,7 @@ export function useHeTree<T extends Record<string, any>>(
         }
         attrsList.push(attrs)
         visibleIds.push(stat.id)
-        if (!stat.open || stat === draggedStat) {
+        if (!stat.open || stat === draggingStat) {
           skipChildren()
         }
       }
@@ -298,7 +298,7 @@ export function useHeTree<T extends Record<string, any>>(
               e.dataTransfer.setDragImage(node, !rtl ? 0 : node.offsetWidth, 0);
             }
             setTimeout(() => {
-              setDraggedStat(stat)
+              setDraggingStat(stat)
               setPlaceholder({
                 ...placeholder!,
                 parentStat: stat.parentStat,
@@ -430,20 +430,6 @@ export function useHeTree<T extends Record<string, any>>(
         }
       }
       const onDragOverRoot: React.DragEventHandler<HTMLElement> = (e) => {
-        // ignore if placeholder exists
-        if (placeholder) {
-          e.preventDefault(); // droppable
-          return
-        }
-        // ignore if has visible tree node
-        if (visibleIds.length > 0) {
-          return
-        }
-        // ignore if already over node box
-        // but it seems to duplicated with the above condition.
-        if (isAnyNodeOver()) {
-          return
-        }
         if (isExternal && !props.onExternalDragOver?.(e)) {
           return
         }
@@ -472,6 +458,10 @@ export function useHeTree<T extends Record<string, any>>(
           }
           return r
         }
+        function getCloest() {
+          const rootEl = rootRef.current as HTMLElement
+          // rootEl.querySelectorAll([])
+        }
       }
       const onDropToRoot: React.DragEventHandler<HTMLElement> = (e) => {
         if (isExternal && !props.onExternalDragOver?.(e)) {
@@ -487,23 +477,23 @@ export function useHeTree<T extends Record<string, any>>(
         }
       }
       function onDragEndOnRoot(e: React.DragEvent<HTMLElement>) {
-        // draggedStat may not be null. This condition is tell typescript that.
-        if (!draggedStat) {
+        // draggingStat may not be null. This condition is tell typescript that.
+        if (!draggingStat) {
           return
         }
         // listen dragend. dragend only trigger in dragstart node
         const isOutside = !placeholder // placeholder is removed if dragleave the tree
-        const customized = props.onDragEnd?.(e, draggedStat!, isOutside) === false
+        const customized = props.onDragEnd?.(e, draggingStat!, isOutside) === false
         if (!customized && !isOutside) {
           let targetIndexInSiblings = placeholder.index
-          if (placeholder.parentStat === draggedStat.parentStat && draggedStat.index < targetIndexInSiblings) {
+          if (placeholder.parentStat === draggingStat.parentStat && draggingStat.index < targetIndexInSiblings) {
             targetIndexInSiblings--
           }
           const newData = [...props.data];
           if (props.dataType === 'flat') {
             const targetParentId = placeholder.parentStat?.id ?? props.rootId
-            const removed = removeByIdInFlatData(newData, draggedStat.id, flatOpt)
-            const newNode = { ...draggedStat.node, [PID]: targetParentId }
+            const removed = removeByIdInFlatData(newData, draggingStat.id, flatOpt)
+            const newNode = { ...draggingStat.node, [PID]: targetParentId }
             removed[0] = newNode
             const targetTreeIndex = convertIndexToTreeIndexInFlatData(newData, targetParentId, targetIndexInSiblings, flatOpt)
             newData.splice(targetTreeIndex, 0, ...removed)
@@ -523,12 +513,12 @@ export function useHeTree<T extends Record<string, any>>(
               siblings[stat.index] = newNode;
               return children
             }
-            const newSiblingsOfDragged = copyNode(draggedStat.parentStat)
-            const newSiblingsOfTarget = placeholder.parentStat === draggedStat.parentStat ? newSiblingsOfDragged : copyNode(placeholder.parentStat)
+            const newSiblingsOfDragged = copyNode(draggingStat.parentStat)
+            const newSiblingsOfTarget = placeholder.parentStat === draggingStat.parentStat ? newSiblingsOfDragged : copyNode(placeholder.parentStat)
             // remove
-            newSiblingsOfDragged.splice(draggedStat.index, 1)
+            newSiblingsOfDragged.splice(draggingStat.index, 1)
             // add
-            newSiblingsOfTarget.splice(targetIndexInSiblings, 0, draggedStat.node)
+            newSiblingsOfTarget.splice(targetIndexInSiblings, 0, draggingStat.node)
           }
           props.onChange!(newData)
         }
@@ -536,7 +526,7 @@ export function useHeTree<T extends Record<string, any>>(
       }
       function reset() {
         setDragOverStat(undefined);
-        setDraggedStat(undefined);
+        setDraggingStat(undefined);
         setPlaceholder(undefined);
       }
       function getDroppable(stat: Stat<T> | null, index?: number): boolean {
@@ -559,7 +549,7 @@ export function useHeTree<T extends Record<string, any>>(
         let closest = stat
         let index = visibleIds.indexOf(stat.id) // index of closest node
         let atTop = false
-        const isPlaceholderOrDraggedNode = (id: Id) => id === placeholderId || getStat(id) === draggedStat
+        const isPlaceholderOrDraggedNode = (id: Id) => id === placeholderId || getStat(id) === draggingStat
         const find = (startIndex: number, step: number) => {
           let i = startIndex, cur
           do {
@@ -597,7 +587,7 @@ export function useHeTree<T extends Record<string, any>>(
         return index
       }
       return { visibleIds, attrsList, onDragOverRoot, onDropToRoot, onDragEndOnRoot }
-    }, [mainCache, indent, draggedStat,
+    }, [mainCache, indent, draggingStat,
     // watch placeholder position
     placeholder?.parentStat, placeholder?.index,
     // watch props
@@ -635,7 +625,7 @@ export function useHeTree<T extends Record<string, any>>(
   useAddEventListener(t2.getEl, 'dragover', t2.onDragOverWindow)
   // 
   const { visibleIds, attrsList, onDragOverRoot, onDropToRoot, onDragEndOnRoot } = cacheForVisible
-  const persistentIndices = useMemo(() => draggedStat ? [visibleIds.indexOf(draggedStat.id)] : [], [draggedStat, visibleIds]);
+  const persistentIndices = useMemo(() => draggingStat ? [visibleIds.indexOf(draggingStat.id)] : [], [draggingStat, visibleIds]);
   // render
   const renderHeTree = (options?: { className?: string, style?: React.CSSProperties }) => {
     let renderNodeBox = props.renderNodeBox!
@@ -663,7 +653,7 @@ export function useHeTree<T extends Record<string, any>>(
     // ref
     virtualListRef,
     // drag states
-    draggedStat, dragOverStat, placeholder,
+    draggingStat, dragOverStat, placeholder,
     // render
     renderHeTree,
   }
