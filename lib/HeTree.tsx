@@ -482,12 +482,12 @@ export function useHeTree<T extends Record<string, any>>(
         if (isExternal && !props.onExternalDragOver?.(e)) {
           return
         }
-        // let customized = false
         if (placeholder) {
           e.preventDefault();
           if (isExternal) {
             const { index: targetIndexInSiblings } = placeholder
             props.onExternalDrop?.(e, placeholder.parentStat, targetIndexInSiblings, isExternal)
+            reset()
           }
         }
       }
@@ -537,6 +537,9 @@ export function useHeTree<T extends Record<string, any>>(
           }
           props.onChange!(newData)
         }
+        reset()
+      }
+      function reset() {
         setDragOverStat(undefined);
         setDraggedStat(undefined);
         setPlaceholder(undefined);
