@@ -5,7 +5,7 @@ exports[`render tree 1`] = `
   className="he-tree"
   onDragEnd={[Function]}
   onDragOver={[Function]}
-  onDrop={[Function]}
+  onExternalDrop={[Function]}
 >
   <div
     onScroll={[Function]}

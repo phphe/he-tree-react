@@ -14,7 +14,7 @@ export default function BasePage() {
       {node.name} - {id}
     </div>,
     onExternalDragOver: (e) => true,
-    onDrop: (e, parentStat, index) => {
+    onExternalDrop: (e, parentStat, index) => {
       setdata(draft => {
         const newNode = { id: 100 + data.length, parent_id: parentStat?.id ?? null, name: "New Node" }
         addToFlatData(draft, newNode, index, keys)

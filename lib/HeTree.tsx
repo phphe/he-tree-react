@@ -66,9 +66,9 @@ export interface HeTreeProps<T extends Record<string, any>> extends Partial<type
   onDragStart?: (e: React.DragEvent<HTMLElement>, stat: Stat<T>) => void,
   onDragOver?: (e: React.DragEvent<HTMLElement>, stat: Stat<T>, isExternal: boolean) => void,
   onExternalDragOver?: (e: React.DragEvent<HTMLElement>) => boolean,
-  onDrop?: (e: React.DragEvent<HTMLElement>, parentStat: Stat<T> | null, index: number, isExternal: boolean) => void,
+  onExternalDrop?: (e: React.DragEvent<HTMLElement>, parentStat: Stat<T> | null, index: number, isExternal: boolean) => void,
   /**
-   * Call on drag end in the window. If you use draggedStat in the callback, it will be undefined if onDrop alreay triggered.
+   * Call on drag end in the window. If you use draggedStat in the callback, it will be undefined if onExternalDrop alreay triggered.
    */
   onDragEnd?: (e: React.DragEvent<HTMLElement>, stat: Stat<T>, isOutside: boolean) => void | boolean,
   onChange: (data: T[]) => void,
@@ -478,7 +478,7 @@ export function useHeTree<T extends Record<string, any>>(
           return r
         }
       }
-      const onDropToRoot: React.DragEventHandler<HTMLElement> = (e) => {
+      const onExternalDropToRoot: React.DragEventHandler<HTMLElement> = (e) => {
         if (isExternal && !props.onExternalDragOver?.(e)) {
           return
         }
@@ -487,7 +487,7 @@ export function useHeTree<T extends Record<string, any>>(
           e.preventDefault();
           if (isExternal) {
             const { index: targetIndexInSiblings } = placeholder
-            props.onDrop?.(e, placeholder.parentStat, targetIndexInSiblings, isExternal)
+            props.onExternalDrop?.(e, placeholder.parentStat, targetIndexInSiblings, isExternal)
           }
         }
       }
@@ -598,14 +598,14 @@ export function useHeTree<T extends Record<string, any>>(
         }
         return index
       }
-      return { visibleIds, attrsList, onDragOverRoot, onDropToRoot, onDragEndOnRoot }
+      return { visibleIds, attrsList, onDragOverRoot, onExternalDropToRoot, onDragEndOnRoot }
     }, [mainCache, indent, draggedStat,
     // watch placeholder position
     placeholder?.parentStat, placeholder?.index,
     // watch props
     indent, placeholderId, rtl, props.rootId,
     // watch func
-    ...([props.canDrop, props.canDropToRoot, props.customDragImage, props.onDragStart, props.onDragOver, props.onExternalDragOver, props.onDrop, props.onDragEnd, props.onChange, props.onDragOpen].map(func => isFunctionReactive && func)),
+    ...([props.canDrop, props.canDropToRoot, props.customDragImage, props.onDragStart, props.onDragOver, props.onExternalDragOver, props.onExternalDrop, props.onDragEnd, props.onChange, props.onDragOpen].map(func => isFunctionReactive && func)),
   ])
   // listen dragover on window
   const t2 = useMemo(() => {
@@ -636,7 +636,7 @@ export function useHeTree<T extends Record<string, any>>(
   }, [props.keepPlaceholder])
   useAddEventListener(t2.getEl, 'dragover', t2.onDragOverWindow)
   // 
-  const { visibleIds, attrsList, onDragOverRoot, onDropToRoot, onDragEndOnRoot } = cacheForVisible
+  const { visibleIds, attrsList, onDragOverRoot, onExternalDropToRoot, onDragEndOnRoot } = cacheForVisible
   const persistentIndices = useMemo(() => draggedStat ? [visibleIds.indexOf(draggedStat.id)] : [], [draggedStat, visibleIds]);
   // render
   const renderHeTree = (options?: { className?: string, style?: React.CSSProperties }) => {
@@ -648,7 +648,7 @@ export function useHeTree<T extends Record<string, any>>(
       </div>
     }
     return (
-      <div className={`he-tree ${options?.className || ''}`} style={options?.style} ref={rootRef} onDragOver={onDragOverRoot} onDrop={onDropToRoot} onDragEnd={onDragEndOnRoot}>
+      <div className={`he-tree ${options?.className || ''}`} style={options?.style} ref={rootRef} onDragOver={onDragOverRoot} onExternalDrop={onExternalDropToRoot} onDragEnd={onDragEndOnRoot}>
         <VirtualList<Id> ref={virtualListRef} items={visibleIds} virtual={props.virtual} persistentIndices={persistentIndices} style={{ height: '100%' }}
           renderItem={(id, index) => renderNodeBox({
             stat: getStat(id)!, attrs: attrsList[index], isPlaceholder: id === placeholderId
