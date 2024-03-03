@@ -13,7 +13,7 @@ export default function BasePage() {
     renderNode: ({ id, node, open, checked, draggable }) => <div>
       {node.name} - {id}
     </div>,
-    onExternalDrag: (e) => true,
+    onExternalDragOver: (e) => true,
     onDrop: (e, parentStat, index) => {
       setdata(draft => {
         const newNode = { id: 100 + data.length, parent_id: parentStat?.id ?? null, name: "New Node" }

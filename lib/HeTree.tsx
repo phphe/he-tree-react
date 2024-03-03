@@ -65,7 +65,7 @@ export interface HeTreeProps<T extends Record<string, any>> extends Partial<type
   customDragImage?: (e: React.DragEvent<HTMLElement>, stat: Stat<T>) => void,
   onDragStart?: (e: React.DragEvent<HTMLElement>, stat: Stat<T>) => void,
   onDragOver?: (e: React.DragEvent<HTMLElement>, stat: Stat<T>, isExternal: boolean) => void,
-  onExternalDrag?: (e: React.DragEvent<HTMLElement>) => boolean,
+  onExternalDragOver?: (e: React.DragEvent<HTMLElement>) => boolean,
   onDrop?: (e: React.DragEvent<HTMLElement>, parentStat: Stat<T> | null, index: number, isExternal: boolean) => void,
   /**
    * Call on drag end in the window. If you use draggedStat in the callback, it will be undefined if onDrop alreay triggered.
@@ -315,7 +315,7 @@ export function useHeTree<T extends Record<string, any>>(
             props.onDragStart?.(e, stat)
           },
           onDragOver(e) {
-            if (isExternal && !props.onExternalDrag?.(e)) {
+            if (isExternal && !props.onExternalDragOver?.(e)) {
               return
             }
             // dragOpen ========================
@@ -449,7 +449,7 @@ export function useHeTree<T extends Record<string, any>>(
         if (isAnyNodeOver()) {
           return
         }
-        if (isExternal && !props.onExternalDrag?.(e)) {
+        if (isExternal && !props.onExternalDragOver?.(e)) {
           return
         }
         if (getDroppable(null, 0)) {
@@ -479,7 +479,7 @@ export function useHeTree<T extends Record<string, any>>(
         }
       }
       const onDropToRoot: React.DragEventHandler<HTMLElement> = (e) => {
-        if (isExternal && !props.onExternalDrag?.(e)) {
+        if (isExternal && !props.onExternalDragOver?.(e)) {
           return
         }
         // let customized = false
@@ -605,7 +605,7 @@ export function useHeTree<T extends Record<string, any>>(
     // watch props
     indent, placeholderId, rtl, props.rootId,
     // watch func
-    ...([props.canDrop, props.canDropToRoot, props.customDragImage, props.onDragStart, props.onDragOver, props.onExternalDrag, props.onDrop, props.onDragEnd, props.onChange, props.onDragOpen].map(func => isFunctionReactive && func)),
+    ...([props.canDrop, props.canDropToRoot, props.customDragImage, props.onDragStart, props.onDragOver, props.onExternalDragOver, props.onDrop, props.onDragEnd, props.onChange, props.onDragOpen].map(func => isFunctionReactive && func)),
   ])
   // listen dragover on window
   const t2 = useMemo(() => {
