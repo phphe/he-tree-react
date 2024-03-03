@@ -478,7 +478,7 @@ export function useHeTree<T extends Record<string, any>>(
           return r
         }
       }
-      const onExternalDropToRoot: React.DragEventHandler<HTMLElement> = (e) => {
+      const onDropToRoot: React.DragEventHandler<HTMLElement> = (e) => {
         if (isExternal && !props.onExternalDragOver?.(e)) {
           return
         }
@@ -598,7 +598,7 @@ export function useHeTree<T extends Record<string, any>>(
         }
         return index
       }
-      return { visibleIds, attrsList, onDragOverRoot, onExternalDropToRoot, onDragEndOnRoot }
+      return { visibleIds, attrsList, onDragOverRoot, onDropToRoot, onDragEndOnRoot }
     }, [mainCache, indent, draggedStat,
     // watch placeholder position
     placeholder?.parentStat, placeholder?.index,
@@ -636,7 +636,7 @@ export function useHeTree<T extends Record<string, any>>(
   }, [props.keepPlaceholder])
   useAddEventListener(t2.getEl, 'dragover', t2.onDragOverWindow)
   // 
-  const { visibleIds, attrsList, onDragOverRoot, onExternalDropToRoot, onDragEndOnRoot } = cacheForVisible
+  const { visibleIds, attrsList, onDragOverRoot, onDropToRoot, onDragEndOnRoot } = cacheForVisible
   const persistentIndices = useMemo(() => draggedStat ? [visibleIds.indexOf(draggedStat.id)] : [], [draggedStat, visibleIds]);
   // render
   const renderHeTree = (options?: { className?: string, style?: React.CSSProperties }) => {
@@ -648,7 +648,7 @@ export function useHeTree<T extends Record<string, any>>(
       </div>
     }
     return (
-      <div className={`he-tree ${options?.className || ''}`} style={options?.style} ref={rootRef} onDragOver={onDragOverRoot} onExternalDrop={onExternalDropToRoot} onDragEnd={onDragEndOnRoot}>
+      <div className={`he-tree ${options?.className || ''}`} style={options?.style} ref={rootRef} onDragOver={onDragOverRoot} onDrop={onDropToRoot} onDragEnd={onDragEndOnRoot}>
         <VirtualList<Id> ref={virtualListRef} items={visibleIds} virtual={props.virtual} persistentIndices={persistentIndices} style={{ height: '100%' }}
           renderItem={(id, index) => renderNodeBox({
             stat: getStat(id)!, attrs: attrsList[index], isPlaceholder: id === placeholderId
