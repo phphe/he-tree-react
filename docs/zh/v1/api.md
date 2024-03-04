@@ -40,11 +40,11 @@ const {/* return */} = useHeTree({/* options */}) // prettier-ignore
   | onDragOpen<a id="ondragopen"/>                 | `function(stat):  void` |             | 拖拽到节点上时打开节点的回调.                                         |
   | direction<a id="direction"/>                   | 'lrt', 'rtl'            | 'ltr'       | 显示方向, ltr 是从左往右显示, rtl 与之相反.                           |
   | rootId<a id="rootid"/>                         | string, null            | null        | 使用扁平数据时, 没有父级的节点的父级 id.                              |
-  | virtual<a id="virtual"/>                       | boolean                 | false       | 是否启用虚拟化. 当数据非常多时用来提示性能.                           |
+  | virtual<a id="virtual"/>                       | boolean                 | false       | 是否启用虚拟化. 当数据非常多时用来提高性能.                           |
   | keepPlaceholder<a id="keepplaceholder"/>       | boolean                 | false       | 当拖拽离开树的范围, 是否要保留占位元素. 建议只在一个树的页面开启此项. |
   | openIds<a id="openids"/>                       | Array                   |             | 所有打开节点的 id.                                                    |
   | checkedIds<a id="checkedids"/>                 | Array                   |             | 所有勾选的节点的 id.                                                  |
-  | isFunctionReactive<a id="isfunctionreactive"/> | boolean                 | false       | 是否监听回调函数的改变. [参考]                                        |
+  | isFunctionReactive<a id="isfunctionreactive"/> | boolean                 | false       | 是否监听回调函数的改变. [参考](guide#isfunctionreactive)              |
 
   以下是 options 中的剩余回调方法:
   | 名称 | 类型 | 描述 |
@@ -54,7 +54,7 @@ const {/* return */} = useHeTree({/* options */}) // prettier-ignore
   | onChange<a id="onchange"/>| `(newData)=>void`|数据发生改变时调用.|
   | canDrag<a id="candrag"/> | `(stat)=>boolean, null, undefined, void` | 节点是否可拖拽. 返回`null, undefined, void`表示继承父节点. |
   | canDrop<a id="candrop"/> | `(stat, index)=>boolean, null, undefined, void` | 节点是否可放入. 返回`null, undefined, void`表示继承父节点. 参数`index`可能为空, 不为空时表示将要放入节点的子级的位置. |
-  | customDragImage<a id="customdragimage"/> | `(event, stat)=> void` | 调用`event.dataTransfer.setDragImage`自定义 drag image. [参考](#https://developer.mozilla.org/en-US/docs/Web/API/DataTransfer/setDragImage). |
+  | customDragImage<a id="customdragimage"/> | `(event, stat)=> void` | 调用`event.dataTransfer.setDragImage`自定义 drag image. [参考](https://developer.mozilla.org/en-US/docs/Web/API/DataTransfer/setDragImage). |
   |onDragStart<a id="ondragstart"/>| `(event, stat)=> void` |当拖拽开始时|
   |onExternalDragOver<a id="onexternaldragover"/>|`(event)=>boolean`|当拖拽来自外部时调用. 你必选返回布尔值表示是否处理此拖拽.|
   |onDragOver<a id="ondragover"/>| `(event, stat, isExternal)=> void` |当拖拽到树上方时, `isExternal`表示此次拖拽是否来自外部.|
@@ -275,7 +275,7 @@ walkFlatData(
 
 ## removeByIdInFlatData
 
-从扁平数据删除一个节点. 返回被删除的数据. 它会改变原数据数组. 所以推荐传入原始数据的拷贝, 或者与`useImmer`一起使用. [参考]
+从扁平数据删除一个节点. 返回被删除的数据. 它会改变原数据数组. 所以推荐传入原始数据的拷贝, 或者与`useImmer`一起使用. [参考](guide#update_flat_data_with_inner_methods2)
 
 ```
 (
@@ -302,7 +302,7 @@ walkFlatData(
 ): Generator
 ```
 
-`parentKeyOrGetter`可以是字符串或者返回父级的方法. `options.withSelf`表示是否包括传入的节点. 返回 [Generator](#https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator). 下面是遍历 HTMLElement 的例子:
+`parentKeyOrGetter`可以是字符串或者返回父级的方法. `options.withSelf`表示是否包括传入的节点. 返回 [Generator](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator). 下面是遍历 HTMLElement 的例子:
 
 ```ts
 let el = document.querySelector("div");
@@ -315,7 +315,7 @@ for (const parent of walkParentsGenerator(el, "parentElement", {
 
 ## Stat
 
-`stat`存储和节点有关的信息. 只读. 属性如下:
+`stat`包括和节点有关的信息. 只读. 属性如下:
 
 | 名称         | 类型         | 描述                        |
 | ------------ | ------------ | :-------------------------- |
