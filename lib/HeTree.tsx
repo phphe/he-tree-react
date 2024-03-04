@@ -637,7 +637,7 @@ export function useHeTree<T extends Record<string, any>>(
   const { visibleIds, attrsList, onDragOverRoot, onDropToRoot, onDragEndOnRoot } = cacheForVisible
   const persistentIndices = useMemo(() => draggingStat ? [visibleIds.indexOf(draggingStat.id)] : [], [draggingStat, visibleIds]);
   // render
-  const renderHeTree = (options?: { className?: string, style?: React.CSSProperties }) => {
+  const renderHeTree = (options?: { className?: string, style?: React.CSSProperties }): ReactNode => {
     let renderNodeBox = props.renderNodeBox!
     if (!renderNodeBox) {
       const placeholder = <div className="he-tree-drag-placeholder" style={{ minHeight: '20px', border: '1px dashed blue' }}></div>
