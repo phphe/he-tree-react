@@ -9,21 +9,22 @@ export default defineConfig({
     // https://vitepress.dev/reference/default-theme-config
     nav: [
       { text: "Home", link: "/" },
-      { text: "Examples", link: "/markdown-examples" },
+      { text: "Guide", link: "/v1/guide" },
+      { text: "API", link: "/v1/api" },
     ],
 
-    sidebar: [
-      {
-        text: "Examples",
-        items: [
-          { text: "Markdown Examples", link: "/markdown-examples" },
-          { text: "Runtime API Examples", link: "/api-examples" },
-        ],
-      },
-    ],
+    // sidebar: [
+    //   {
+    //     text: "Examples",
+    //     items: [
+    //       { text: "Markdown Examples", link: "/markdown-examples" },
+    //       { text: "Runtime API Examples", link: "/api-examples" },
+    //     ],
+    //   },
+    // ],
 
     socialLinks: [
-      { icon: "github", link: "https://github.com/vuejs/vitepress" },
+      { icon: "github", link: "https://github.com/phphe/he-tree-react" },
     ],
   },
   markdown: {

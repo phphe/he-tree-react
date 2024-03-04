@@ -4,22 +4,21 @@ layout: home
 
 hero:
   name: "He Tree React"
-  text: "A VitePress Site"
-  tagline: My great project tagline
+  # text: ""
+  tagline: React draggable sortable tree component
   actions:
     - theme: brand
-      text: Markdown Examples
-      link: /markdown-examples
+      text: Get started
+      link: ./v1/guide
     - theme: alt
-      text: API Examples
-      link: /api-examples
+      text: API
+      link: ./v1/api
 
 features:
-  - title: Feature A
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
-  - title: Feature B
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
-  - title: Feature C
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
+  - title: Draggable
+    details: When drag, show a placeholder to help user.
+  - title: High-performance
+    details: Supports virtual list to handle large data calmly.
+  - title: Easy to customize
+    details: Simple structure, few built-in style, so the style and UI can be easily customized.
 ---
-
