@@ -74,7 +74,7 @@ export default function App() {
 - `idKey, parentIdKey`, 默认值是`id`和`parent_id`. 使用扁平数据时需要. 虽然有默认值, 但还是建议写明更好.
 - `childrenKey`, 默认是`children`. 使用树形数据时需要. 虽然有默认值, 但还是建议写明更好.
 - `onChange`, 数据改变时调用的函数, 参数是新数据. 如果你的树不会改变则不需要.
-- `isFunctionReactive`, 布尔. 默认`false`. `useHeTree`选项中包含许多回调函数, 如`onChange, canDrop`. `isFunctionReactive`可用来控制是否监听这些回调函数的改变. 如果你的回调函数和`data`是同步改变的, 则不用启用此项. 否则你需要启用此项, 并且用 React 的`useCallback`或`useMemo`缓存你的所有回调函数以避免性能问题.
+- <a id="isfunctionreactive"/>`isFunctionReactive`, 布尔. 默认`false`. `useHeTree`选项中包含许多回调函数, 如`onChange, canDrop`. `isFunctionReactive`可用来控制是否监听这些回调函数的改变. 如果你的回调函数和`data`是同步改变的, 则不用启用此项. 否则你需要启用此项, 并且用 React 的`useCallback`或`useMemo`缓存你的所有回调函数以避免性能问题.
 
 [查看`useHeTree`的 API 文档以了解更多](api#usehetree).
 
@@ -103,7 +103,7 @@ export default function App() {
 <<< @/../src/pages/custom_drag_trigger_flat_data.tsx{14}
 <DemoIframe url="/custom_drag_trigger_flat_data" />
 
-## 节点 HTML 结构和样式
+## 节点 HTML 结构和样式<a id="node_structure_style"/>
 
 节点 HTML 如下:
 
@@ -145,7 +145,7 @@ renderNodeBox: ({ stat, attrs, isPlaceholder }) => (
 <<< @/../src/pages/customize_placeholder_and_node_box.tsx{13-19,23-39}
 <DemoIframe url="/customize_placeholder_and_node_box" />
 
-## 节点的展开与折叠
+## 节点的展开与折叠<a id="node_open"/>
 
 - 使用选项`openIds`表明展开的节点.
 - 可通过`stat.open`获取该节点的`open`状态.
@@ -156,7 +156,7 @@ renderNodeBox: ({ stat, attrs, isPlaceholder }) => (
 <DemoIframe url="/open_ids" />
 此例子顶部 4 个按钮分别是: 展开全部, 折叠全部, 展开'Python'节点的所有父节点, 仅展开'Python'节点的所有父节点.
 
-## 节点的勾选
+## 节点的勾选<a id="node_checked"/>
 
 - 使用选项`checkedIds`表明勾选的节点.
 - 可通过`stat.checked`获取该节点的`checked`状态.
@@ -213,7 +213,7 @@ yarn add immer use-immer
 
 :::
 
-## 使用内置方法更新扁平数据
+## 使用内置方法更新扁平数据<a id="update_flat_data_with_inner_methods2"/>
 
 [`addToFlatData`](api#addtoflatdata): 增加节点. [`removeByIdInFlatData`](api#removebyidinflatdata): 删除节点.
 这两个方法都会改变原数据, 所以把原数据的复制传给它, 或者与`immer`一起使用.
