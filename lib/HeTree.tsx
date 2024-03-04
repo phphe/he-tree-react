@@ -4,7 +4,6 @@ import { VirtualList, VirtualListHandle } from "./VirtualList";
 
 // types ==================================
 export type Id = string | number
-export type Checked = boolean | null
 export interface Stat<T> {
   id: Id,
   pid: Id | null,
@@ -21,7 +20,7 @@ export interface Stat<T> {
   siblingStats: Stat<T>[],
   _isStat?: boolean,
   open: boolean,
-  checked: Checked,
+  checked: boolean,
   draggable: boolean,
 }
 
@@ -1020,7 +1019,7 @@ export function updateCheckedInFlatData<T extends Record<Id, any>>(
 ) {
   const checkedIdSet = new Set(checkedIds)
   const idsToUpdate = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
-  const all = new Map<Id, Checked>()
+  const all = new Map<Id, boolean | null>()
   const changedPids = new Set<Id>(idsToUpdate)
   const pidById: Record<Id, Id | null> = {}
   const childIdsById = new Map<Id | null, Id[]>()
@@ -1057,7 +1056,7 @@ export function updateCheckedInFlatData<T extends Record<Id, any>>(
         hasTrue = true
       }
     }
-    let checked: Checked
+    let checked: boolean | null
     if (hasNull) {
       checked = null
     } else if (hasFalse && hasTrue) {
@@ -1096,7 +1095,7 @@ export function updateCheckedInTreeData<T extends Record<Id, any>>(
   const { idKey: ID, childrenKey: CHILDREN } = options
   const checkedIdSet = new Set(checkedIds)
   const idsToUpdate = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
-  const all = new Map<Id, Checked>()
+  const all = new Map<Id, boolean | null>()
   const changedPids = new Set<Id>(idsToUpdate)
   const pidById: Record<Id, Id | null> = {}
   const childIdsById = new Map<Id | null, Id[]>()
@@ -1134,7 +1133,7 @@ export function updateCheckedInTreeData<T extends Record<Id, any>>(
         hasTrue = true
       }
     }
-    let checked: Checked
+    let checked: boolean | null
     if (hasNull) {
       checked = null
     } else if (hasFalse && hasTrue) {
