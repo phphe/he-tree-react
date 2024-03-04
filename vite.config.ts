@@ -9,7 +9,7 @@ import path from "path";
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [UnoCSS(), react()],
-  base: "/he-tree-react",
+  base: "/v1-demo-windowed",
   server: {
     port: 3000,
   },

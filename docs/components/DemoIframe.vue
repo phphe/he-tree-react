@@ -36,7 +36,7 @@ export default {
   },
   computed: {
     fullUrl() {
-      return `${import.meta.env.DEV ? 'http://localhost:3000' : ''}/he-tree-react#${this.url}?bg=${this.bg}&color=${this.color}&iframe_id=${this.iframe_id}`
+      return `${import.meta.env.DEV ? 'http://localhost:3000' : ''}/v1-demo-windowed#${this.url}?bg=${this.bg}&color=${this.color}&iframe_id=${this.iframe_id}`
     },
   },
   watch: {
