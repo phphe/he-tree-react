@@ -6,7 +6,7 @@ export const pkg = require("./package.json");
 
 // ============================ config area ============================
 const entry = resolve("lib/index.ts");
-export const name = "reactBaseVirtualList"; // for umd, iife
+export const name = "HeTreeReact"; // for umd, iife
 export const banner = `
 /*!
  * ${pkg.name}
