@@ -1,15 +1,15 @@
 {
-  "name": "@phphe/react-base-virtual-list",
+  "name": "he-tree-react",
   "version": "0.0.1-beta.11",
   "license": "MIT",
   "author": "phphe <phphe@outlook.com> (https://github.com/phphe)",
-  "description": "React base virtual list component.",
+  "description": "React draggable sortable tree component.",
   "keywords": [
-    "virtual list",
-    "virtual scroll",
+    "draggable tree",
+    "sortable tree",
     "React component"
   ],
-  "repository": "https://github.com/phphe/react-base-virtual-list.git",
+  "repository": "https://github.com/phphe/he-tree-react.git",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -41,10 +41,15 @@
   },
   "dependencies": {
     "helper-js": "^3.1.5",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-base-virtual-list": "^1.0.0"
+  },
+  "peerDependencies": {
+    "react": "^18",
+    "react-dom": "^18"
   },
   "devDependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
     "@types/react-test-renderer": "^18.0.7",
