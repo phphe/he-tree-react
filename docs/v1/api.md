@@ -4,7 +4,7 @@
 
 The exported variables, methods, and Typescript types.
 
-- [`useHeTree`](#usehetree): Main React hook. This library does not export components, you need to use the [`renderTree`](#rendertree) render tree returned by this function.
+- [`useHeTree`](#usehetree): Main React hook. This library does not export components, you need to use the [`renderHeTree`](#renderhetree) render tree returned by this function.
 - [`walkTreeData`](#walktreedata), [`walkTreeDataGenerator`](#walktreedatagenerator), [`findTreeData`](#findtreedata), [`filterTreeData`](#filtertreedata), [`openParentsInTreeData`](#openparentsintreedata), [`updateCheckedInTreeData`](#updatecheckedintreedata): Methods for processing and traversing tree data.
 - [`sortFlatData`](#sortflatdata), [`walkFlatData`](#walkflatdata), [`walkFlatDataGenerator`](#walkflatdatagenerator), [`convertIndexToTreeIndexInFlatData`](#convertindextotreeindexinflatdata), [`addToFlatData`](#addtoflatdata), [`removeByIdInFlatData`](#removebyidinflatdata), [`openParentsInFlatData`](#openparentsinflatdata), [`updateCheckedInFlatData`](#updatecheckedinflatdata): Methods for processing and traversing flat data.
 - [`walkParentsGenerator`](#walkparentsgenerator): To iterate over another special kind of data. This data is like `HTMLElement`, which contains a key pointing to the parent node like `parentElement`.

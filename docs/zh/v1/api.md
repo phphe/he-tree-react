@@ -4,7 +4,7 @@
 
 此库导出的变量, 方法, Typescript 类型.
 
-- [`useHeTree`](#usehetree): 主要的 React hook. 本库没有导出组件, 你需要使用此函数返回的[`renderTree`](#rendertree)渲染树.
+- [`useHeTree`](#usehetree): 主要的 React hook. 本库没有导出组件, 你需要使用此函数返回的[`renderHeTree`](#renderhetree)渲染树.
 - [`walkTreeData`](#walktreedata), [`walkTreeDataGenerator`](#walktreedatagenerator), [`findTreeData`](#findtreedata), [`filterTreeData`](#filtertreedata), [`openParentsInTreeData`](#openparentsintreedata), [`updateCheckedInTreeData`](#updatecheckedintreedata): 用来处理和遍历树形数据的方法.
 - [`sortFlatData`](#sortflatdata), [`walkFlatData`](#walkflatdata), [`walkFlatDataGenerator`](#walkflatdatagenerator), [`convertIndexToTreeIndexInFlatData`](#convertindextotreeindexinflatdata), [`addToFlatData`](#addtoflatdata), [`removeByIdInFlatData`](#removebyidinflatdata), [`openParentsInFlatData`](#openparentsinflatdata), [`updateCheckedInFlatData`](#updatecheckedinflatdata): 用来处理和遍历扁平数据的方法.
 - [`walkParentsGenerator`](#walkparentsgenerator): 遍历另一种特殊数据的方法. 这种数据类似`HTMLElement`, 其中包含类似于`parentElement`的指向父节点的键.
