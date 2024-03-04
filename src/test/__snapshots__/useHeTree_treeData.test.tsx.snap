@@ -2,15 +2,16 @@
 
 exports[`render tree 1`] = `
 <div
-  className="he-tree"
+  className="he-tree "
   onDragEnd={[Function]}
   onDragOver={[Function]}
-  onExternalDrop={[Function]}
+  onDrop={[Function]}
 >
   <div
     onScroll={[Function]}
     style={
       {
+        "height": "100%",
         "overflow": "auto",
       }
     }
@@ -29,7 +30,6 @@ exports[`render tree 1`] = `
         data-node-box={true}
         draggable={true}
         onDragLeave={[Function]}
-        onDragOver={[Function]}
         onDragStart={[Function]}
         style={
           {
@@ -47,7 +47,6 @@ exports[`render tree 1`] = `
         data-node-box={true}
         draggable={true}
         onDragLeave={[Function]}
-        onDragOver={[Function]}
         onDragStart={[Function]}
         style={
           {
@@ -65,7 +64,6 @@ exports[`render tree 1`] = `
         data-node-box={true}
         draggable={true}
         onDragLeave={[Function]}
-        onDragOver={[Function]}
         onDragStart={[Function]}
         style={
           {
@@ -83,7 +81,6 @@ exports[`render tree 1`] = `
         data-node-box={true}
         draggable={true}
         onDragLeave={[Function]}
-        onDragOver={[Function]}
         onDragStart={[Function]}
         style={
           {
@@ -101,7 +98,6 @@ exports[`render tree 1`] = `
         data-node-box={true}
         draggable={true}
         onDragLeave={[Function]}
-        onDragOver={[Function]}
         onDragStart={[Function]}
         style={
           {
@@ -119,7 +115,6 @@ exports[`render tree 1`] = `
         data-node-box={true}
         draggable={true}
         onDragLeave={[Function]}
-        onDragOver={[Function]}
         onDragStart={[Function]}
         style={
           {
@@ -137,7 +132,6 @@ exports[`render tree 1`] = `
         data-node-box={true}
         draggable={true}
         onDragLeave={[Function]}
-        onDragOver={[Function]}
         onDragStart={[Function]}
         style={
           {
@@ -155,7 +149,6 @@ exports[`render tree 1`] = `
         data-node-box={true}
         draggable={true}
         onDragLeave={[Function]}
-        onDragOver={[Function]}
         onDragStart={[Function]}
         style={
           {
@@ -173,7 +166,6 @@ exports[`render tree 1`] = `
         data-node-box={true}
         draggable={true}
         onDragLeave={[Function]}
-        onDragOver={[Function]}
         onDragStart={[Function]}
         style={
           {
