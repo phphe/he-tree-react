@@ -123,7 +123,7 @@ The outer div is called `nodeBox`, don't modify its `padding-left, padding-right
 
 ```tsx{4-7,9}
 renderNodeBox: ({ stat, attrs, isPlaceholder }) => (
-  <div {...attrs}>
+  <div {...attrs} key={attrs.key}>
     {isPlaceholder ? (
       <div
         className="he-tree-drag-placeholder"
