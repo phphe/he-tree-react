@@ -43,7 +43,7 @@ jobs:
           cd docs/.vitepress/dist
 
           # cp demo to here
-          cp ../../../dist v1-demo-windowed
+          cp -r ../../../dist v1-demo-windowed
 
           # Set custom domain for GitHub Pages
           echo "he-tree-react.phphe.com" > CNAME
