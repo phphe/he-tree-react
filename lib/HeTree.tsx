@@ -640,7 +640,7 @@ export function useHeTree<T extends Record<string, any>>(
     let renderNodeBox = props.renderNodeBox!
     if (!renderNodeBox) {
       const placeholder = <div className="he-tree-drag-placeholder" style={{ minHeight: '20px', border: '1px dashed blue' }}></div>
-      renderNodeBox = ({ stat, attrs, isPlaceholder }) => <div {...attrs}>
+      renderNodeBox = ({ stat, attrs, isPlaceholder }) => <div {...attrs} key={attrs.key}>
         {isPlaceholder ? placeholder : props.renderNode!(stat)}
       </div>
     }
