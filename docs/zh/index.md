@@ -11,8 +11,8 @@ hero:
       text: 开始使用
       link: ./v1/guide
     - theme: alt
-      text: API
-      link: ./v1/api
+      text: 演示
+      link: ./v1/examples
 
 features:
   - title: 可拖拽

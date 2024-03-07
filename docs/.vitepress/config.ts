@@ -7,11 +7,11 @@ export default defineConfig({
   cleanUrls: true,
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
-    nav: [
-      { text: "Home", link: "/" },
-      { text: "Guide", link: "/v1/guide" },
-      { text: "API", link: "/v1/api" },
-    ],
+    // nav: [
+    //   { text: "Home", link: "/" },
+    //   { text: "Guide", link: "/v1/guide" },
+    //   { text: "API", link: "/v1/api" },
+    // ],
 
     // sidebar: [
     //   {
@@ -34,10 +34,26 @@ export default defineConfig({
     root: {
       label: "English",
       lang: "en",
+      themeConfig: {
+        nav: [
+          { text: "Home", link: "/" },
+          { text: "Guide", link: "/v1/guide" },
+          { text: "Examples", link: "/v1/examples" },
+          { text: "API", link: "/v1/api" },
+        ],
+      },
     },
     zh: {
       label: "中文",
       lang: "zh",
+      themeConfig: {
+        nav: [
+          { text: "首页", link: "/zh/" },
+          { text: "使用", link: "/zh/v1/guide" },
+          { text: "例子", link: "/zh/v1/examples" },
+          { text: "API", link: "/zh/v1/api" },
+        ],
+      },
     },
   },
   head: [

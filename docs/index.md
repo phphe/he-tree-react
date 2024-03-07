@@ -11,8 +11,8 @@ hero:
       text: Get started
       link: ./v1/guide
     - theme: alt
-      text: API
-      link: ./v1/api
+      text: Online Examples
+      link: ./v1/examples
 
 features:
   - title: Draggable
