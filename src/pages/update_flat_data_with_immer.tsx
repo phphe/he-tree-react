@@ -31,7 +31,7 @@ export default function BasePage() {
   }
   const initialData = useRef<typeof data>();
   initialData.current = initialData.current || data;
-  const { renderHeTree } = useHeTree({
+  const { renderTree } = useHeTree({
     ...keys,
     data,
     dataType: 'flat',
@@ -46,6 +46,6 @@ export default function BasePage() {
   })
   return <div>
     <button onClick={() => setdata(initialData.current!)}>Restore</button>
-    {renderHeTree({ style: { width: '300px', border: '1px solid #555', padding: '20px' } })}
+    {renderTree({ style: { width: '300px', border: '1px solid #555', padding: '20px' } })}
   </div>
 }

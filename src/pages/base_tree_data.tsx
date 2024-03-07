@@ -54,7 +54,7 @@ export default function BasePage() {
       ],
     },
   ]);
-  const { renderHeTree } = useHeTree({
+  const { renderTree } = useHeTree({
     data,
     dataType: 'tree',
     childrenKey: 'children',
@@ -64,6 +64,6 @@ export default function BasePage() {
     </div>,
   })
   return <div>
-    {renderHeTree({ style: { width: '300px', border: '1px solid #555', padding: '20px' } })}
+    {renderTree({ style: { width: '300px', border: '1px solid #555', padding: '20px' } })}
   </div>
 }

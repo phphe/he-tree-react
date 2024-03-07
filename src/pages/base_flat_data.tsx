@@ -50,7 +50,7 @@ export default function BasePage() {
       name: "Physics",
     },
   ], keys));
-  const { renderHeTree } = useHeTree({
+  const { renderTree } = useHeTree({
     ...keys,
     data,
     dataType: 'flat',
@@ -60,6 +60,6 @@ export default function BasePage() {
     </div>,
   })
   return <div>
-    {renderHeTree({ style: { width: '300px', border: '1px solid #555', padding: '20px' } })}
+    {renderTree({ style: { width: '300px', border: '1px solid #555', padding: '20px' } })}
   </div>
 }

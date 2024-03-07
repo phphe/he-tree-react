@@ -50,16 +50,16 @@ yarn add he-tree-react
 
 ## 没有组件
 
-此库没有导出组件,而是导出一个 hook `useHeTree`. 使用它返回的`renderHeTree`渲染树. 这样做的好处是除了`renderHeTree`,
+此库没有导出组件,而是导出一个 hook `useHeTree`. 使用它返回的`renderTree`渲染树. 这样做的好处是除了`renderTree`,
 `useHeTree`还会返回一些内部状态和方法, 可以轻松的被获取.
 
 ```js
 import { useHeTree } from "he-tree-react";
 
 export default function App() {
-  const { renderHeTree } = useHeTree({...})
+  const { renderTree } = useHeTree({...})
   return <div>
-    {renderHeTree()}
+    {renderTree()}
   </div>
 }
 ```

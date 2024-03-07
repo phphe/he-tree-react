@@ -14,7 +14,7 @@ export default function BasePage() {
       setopenIds((openIds || allIds).filter((i) => i !== id));
     }
   }
-  const { renderHeTree, allIds } = useHeTree({
+  const { renderTree, allIds } = useHeTree({
     ...keys,
     data,
     dataType: 'flat',
@@ -30,6 +30,6 @@ export default function BasePage() {
     },
   })
   return <div>
-    {renderHeTree({ style: { width: '300px', border: '1px solid #555', padding: '20px' } })}
+    {renderTree({ style: { width: '300px', border: '1px solid #555', padding: '20px' } })}
   </div>
 }

@@ -49,15 +49,15 @@ The `id, pid, children` in the data are not fixed. In the options, use `idKey, p
 
 ## No Components
 
-This library does not export components, but exports a hook `useHeTree`. Use the returned `renderHeTree` to render the tree. The advantage of this is that in addition to `renderHeTree`, `useHeTree` will also return some internal states and methods, which can be easily obtained.
+This library does not export components, but exports a hook `useHeTree`. Use the returned `renderTree` to render the tree. The advantage of this is that in addition to `renderTree`, `useHeTree` will also return some internal states and methods, which can be easily obtained.
 
 ```js
 import { useHeTree } from "he-tree-react";
 
 export default function App() {
-  const { renderHeTree } = useHeTree({...})
+  const { renderTree } = useHeTree({...})
   return <div>
-    {renderHeTree()}
+    {renderTree()}
   </div>
 }
 ```

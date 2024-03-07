@@ -13,7 +13,7 @@ export default function BasePage() {
     setcheckedIds(r[0]);
     setsemiCheckedIds(r[1]);
   }
-  const { renderHeTree } = useHeTree({
+  const { renderTree } = useHeTree({
     ...keys,
     data,
     dataType: 'flat',
@@ -27,6 +27,6 @@ export default function BasePage() {
   return <div>
     Checked: {JSON.stringify(checkedIds)} <br />
     Semi-Checked: {JSON.stringify(semiCheckedIds)}
-    {renderHeTree({ style: { width: '300px', border: '1px solid #555', padding: '20px' } })}
+    {renderTree({ style: { width: '300px', border: '1px solid #555', padding: '20px' } })}
   </div>
 }

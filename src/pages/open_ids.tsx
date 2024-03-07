@@ -14,7 +14,7 @@ export default function BasePage() {
       setopenIds((openIds || allIds).filter((i) => i !== id));
     }
   }
-  const { renderHeTree, allIds } = useHeTree({
+  const { renderTree, allIds } = useHeTree({
     ...keys,
     data,
     dataType: 'flat',
@@ -30,6 +30,6 @@ export default function BasePage() {
     <button onClick={() => setopenIds([])}>Close All</button>
     <button onClick={() => setopenIds(openParentsInFlatData(data, openIds || allIds, 8, keys))}>Open 'Python'</button>
     <button onClick={() => setopenIds(openParentsInFlatData(data, [], 8, keys))}>Only Open 'Python'</button>
-    {renderHeTree({ style: { width: '300px', border: '1px solid #555', padding: '20px' } })}
+    {renderTree({ style: { width: '300px', border: '1px solid #555', padding: '20px' } })}
   </div>
 }

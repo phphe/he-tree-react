@@ -10,7 +10,7 @@ import { createData } from "./treeData.test";
 test('render tree', () => {
   const Test = () => {
     const [data, setdata] = useState(createData);
-    const { renderHeTree } = useHeTree({
+    const { renderTree } = useHeTree({
       data,
       dataType: 'tree',
       onChange: setdata,
@@ -18,7 +18,7 @@ test('render tree', () => {
         {node.name}
       </div>,
     })
-    return renderHeTree()
+    return renderTree()
   }
   const component = renderer.create(
     <Test />,

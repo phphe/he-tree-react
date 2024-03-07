@@ -4,7 +4,7 @@
 
 此库导出的变量, 方法, Typescript 类型.
 
-- [`useHeTree`](#usehetree): 主要的 React hook. 本库没有导出组件, 你需要使用此函数返回的[`renderHeTree`](#renderhetree)渲染树.
+- [`useHeTree`](#usehetree): 主要的 React hook. 本库没有导出组件, 你需要使用此函数返回的[`renderTree`](#rendertree)渲染树.
 - [`walkTreeData`](#walktreedata), [`walkTreeDataGenerator`](#walktreedatagenerator), [`findTreeData`](#findtreedata), [`filterTreeData`](#filtertreedata), [`openParentsInTreeData`](#openparentsintreedata), [`updateCheckedInTreeData`](#updatecheckedintreedata): 用来处理和遍历树形数据的方法.
 - [`sortFlatData`](#sortflatdata), [`walkFlatData`](#walkflatdata), [`walkFlatDataGenerator`](#walkflatdatagenerator), [`convertIndexToTreeIndexInFlatData`](#convertindextotreeindexinflatdata), [`addToFlatData`](#addtoflatdata), [`removeByIdInFlatData`](#removebyidinflatdata), [`openParentsInFlatData`](#openparentsinflatdata), [`updateCheckedInFlatData`](#updatecheckedinflatdata): 用来处理和遍历扁平数据的方法.
 - [`walkParentsGenerator`](#walkparentsgenerator): 遍历另一种特殊数据的方法. 这种数据类似`HTMLElement`, 其中包含类似于`parentElement`的指向父节点的键.
@@ -64,7 +64,7 @@ const {/* return */} = useHeTree({/* options */}) // prettier-ignore
 `useHeTree`的返回是对象, 包含了一些 states 和方法. **注意**, 这个对象每次更新都会改变, 不要依赖这个对象, 可以依赖这个对象的属性. 属性如下:
 | 名称 | 类型 | 描述 |
 | ------------------------- | ------------------------------------------------------ | :-------------------------------------------------------------------------------------------------------------------------------------------|
-|renderHeTree<a id="renderhetree"/>|`(options?: { className?: string, style?: React.CSSProperties }): ReactNode`|渲染树. 参数可以传入`className`和`style`控制根元素的样式.|
+|renderTree<a id="rendertree"/>|`(options?: { className?: string, style?: React.CSSProperties }): ReactNode`|渲染树. 参数可以传入`className`和`style`控制根元素的样式.|
 |getStat<a id="getstat"/>|`(idOrNodeOrStat)=>stat`|根据 id, 节点数据或 stat, 获得对应的 stat.|
 |allIds<a id="allids"/>|数组|所有节点的 id.|
 |rootIds<a id="rootids"/>|数组|树根级的所有节点的 id.|
