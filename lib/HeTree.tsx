@@ -601,7 +601,23 @@ export function useHeTree<T extends Record<string, any>>(
         }
         return index
       }
-      return { visibleIds, attrsList, onDragOverRoot, onDropToRoot, onDragEndOnRoot }
+      function scrollToNode(idOrNodeOrStat: Id | T | Stat<T>, block: 'start' | 'end' | 'center' | 'nearest' = 'start') {
+        const stat = getStat(idOrNodeOrStat)
+        if (!stat) {
+          return false
+        }
+        let index = visibleIds.indexOf(stat.id)
+        if (index === -1) {
+          return false
+        }
+        if (virtualListRef.current) {
+          virtualListRef.current.scrollToIndex(index, block)
+          return true
+        } else {
+          return false
+        }
+      }
+      return { visibleIds, attrsList, onDragOverRoot, onDropToRoot, onDragEndOnRoot, scrollToNode }
     }, [mainCache, indent, draggingStat,
     // watch placeholder position
     placeholder?.parentStat, placeholder?.index,
@@ -639,7 +655,7 @@ export function useHeTree<T extends Record<string, any>>(
   }, [props.keepPlaceholder])
   useAddEventListener(t2.getEl, 'dragover', t2.onDragOverWindow)
   // 
-  const { visibleIds, attrsList, onDragOverRoot, onDropToRoot, onDragEndOnRoot } = cacheForVisible
+  const { visibleIds, attrsList, onDragOverRoot, onDropToRoot, onDragEndOnRoot, scrollToNode } = cacheForVisible
   const persistentIndices = useMemo(() => draggingStat ? [visibleIds.indexOf(draggingStat.id)] : [], [draggingStat, visibleIds]);
   // render
   const renderTree = (options?: { className?: string, style?: React.CSSProperties }): ReactNode => {
@@ -671,6 +687,8 @@ export function useHeTree<T extends Record<string, any>>(
     draggingStat, dragOverStat, placeholder,
     // render
     renderTree, renderHeTree: renderTree,
+    // methods
+    scrollToNode,
   }
 }
 // react components ==================================

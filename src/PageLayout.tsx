@@ -66,6 +66,10 @@ export default function PageLayout(props: {}) {
       path: '/virtual_list'
     },
     {
+      title: 'Scroll to Node',
+      path: '/scroll_to_node',
+    },
+    {
       title: 'Home',
       path: '/',
     },
