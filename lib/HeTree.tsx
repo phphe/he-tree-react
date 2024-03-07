@@ -337,9 +337,9 @@ export function useHeTree<T extends Record<string, any>>(
             let pl
             if (!rtl) {
               // ltr
-              pl = Math.ceil((e.pageX - rect.x) / indent)
+              pl = Math.ceil((e.clientX - rect.x) / indent)
             } else {
-              pl = Math.ceil((rect.right - e.pageX) / indent)
+              pl = Math.ceil((rect.right - e.clientX) / indent)
             }
             return hp.between(pl, 0, (closest?.level || 0) + 1)
           }
@@ -349,7 +349,7 @@ export function useHeTree<T extends Record<string, any>>(
             const topNodeElement = rootEl.querySelector(`[data-key="${closest.id}"]`)
             if (topNodeElement) {
               const rect = topNodeElement.getBoundingClientRect()
-              atTop = rect.y + rect.height / 2 > e.pageY
+              atTop = rect.y + rect.height / 2 > e.clientY
             }
           }
           if (atTop) {
@@ -427,7 +427,7 @@ export function useHeTree<T extends Record<string, any>>(
             nodeEls,
             (nodeEl: HTMLElement) =>
               nodeEl.getBoundingClientRect().top -
-              e.pageY,
+              e.clientY,
             { returnNearestIfNoHit: true }
           )!;
           let index: number | undefined
@@ -457,12 +457,12 @@ export function useHeTree<T extends Record<string, any>>(
             return false
           }
 
-          const refresh = () => Object.assign(dragOverInfo, { id: stat.id, x: e.pageX, y: e.pageY, time: Date.now() })
+          const refresh = () => Object.assign(dragOverInfo, { id: stat.id, x: e.clientX, y: e.clientY, time: Date.now() })
           if (dragOverInfo.id !== stat.id) {
             refresh()
             return false
           }
-          if (calculateDistance(e.pageX, e.pageY, dragOverInfo.x, dragOverInfo.y) > 10) {
+          if (calculateDistance(e.clientX, e.clientY, dragOverInfo.x, dragOverInfo.y) > 10) {
             refresh()
             return false
           }
@@ -496,7 +496,7 @@ export function useHeTree<T extends Record<string, any>>(
           // get isOutside by coordinates
           const rootEl = rootRef.current as HTMLElement
           let rect = rootEl.getBoundingClientRect()
-          isOutside = !(e.pageX >= rect.left && e.pageX <= rect.right && e.pageY >= rect.top && e.pageY <= rect.bottom)
+          isOutside = !(e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom)
         }
         const customized = props.onDragEnd?.(e, draggingStat!, isOutside) === false
         if (!customized && placeholder) {
