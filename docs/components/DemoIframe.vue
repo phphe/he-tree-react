@@ -76,8 +76,8 @@ export default {
       }
     }
     window.addEventListener("message", this._messageListener, false);
-
     window.addEventListener("scroll", this.checkShouldLoad);
+    this.checkShouldLoad()
   },
   beforeUnmount() {
     window.removeEventListener("message", this._messageListener, false);
