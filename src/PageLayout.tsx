@@ -70,6 +70,10 @@ export default function PageLayout(props: {}) {
       path: '/scroll_to_node',
     },
     {
+      title: 'Custom Style',
+      path: '/custom_style',
+    },
+    {
       title: 'Home',
       path: '/',
     },

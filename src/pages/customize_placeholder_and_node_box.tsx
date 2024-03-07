@@ -12,7 +12,7 @@ export default function BasePage() {
     onChange: setdata,
     renderNodeBox: ({ stat, attrs, isPlaceholder }) => (
       <div {...attrs} key={attrs.key}>
-        {isPlaceholder ? <div className="he-tree-drag-placeholder">drop here</div>
+        {isPlaceholder ? <div className="my-drag-placeholder">drop here</div>
           : <div className="mynode">{stat.node.name}</div>
         }
       </div>

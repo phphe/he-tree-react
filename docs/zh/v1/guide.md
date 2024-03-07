@@ -266,3 +266,4 @@ yarn add immer use-immer
 - 选项 [`customDragImage`](api#customdragimage): 自定义 drag image.
 - 选项 [`rootId`](api#rootid): 使用扁平数据时, 顶级节点的父 id.
 - 选项 [`keepPlaceholder`](api#keepplaceholder): 拖拽到树外时, 是否要保留拖拽占位节点. 默认`false`.
+- 辅助方法 [`scrollToNode`](api#scrolltonode): 滚动到指定节点.

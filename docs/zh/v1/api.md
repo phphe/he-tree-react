@@ -61,6 +61,8 @@ const {/* return */} = useHeTree({/* options */}) // prettier-ignore
   |onDragEnd<a id="ondragend"/>|`(event, stat, isOutside)=>void`|当此树发起的拖拽结束时调用. stat 是此次拖拽的节点的 stat.isOutside 表示是否在树外部结束.|
   |onExternalDrop<a id="onexternaldrop"/>|`(event, parentStat, index)=>void`|当外部拖拽在此树结束时调用. parentStat 是目标父节点的 stat, 为空时代表树的根级. index 是目标位置, 即节点在兄弟节点中的索引.|
 
+### `useHeTree`的返回
+
 `useHeTree`的返回是对象, 包含了一些 states 和方法. **注意**, 这个对象每次更新都会改变, 不要依赖这个对象, 可以依赖这个对象的属性. 属性如下:
 | 名称 | 类型 | 描述 |
 | ------------------------- | ------------------------------------------------------ | :-------------------------------------------------------------------------------------------------------------------------------------------|
@@ -76,6 +78,7 @@ const {/* return */} = useHeTree({/* options */}) // prettier-ignore
 |visibleIds<a id="visibleids"/>|数组|显示的所有节点的 id.|
 |attrsList<a id="attrslist"/>|数组|显示的所有节点的 attrs.|
 |virtualListRef<a id="virtuallistref"/>|`ref`|虚拟列表组件的 ref, 参考[虚拟列表](https://github.com/phphe/react-base-virtual-list).|
+|scrollToNode<a id="scrolltonode"/>|`(idOrNodeOrStat)=>boolean`|滚动到节点. 参数可以是 id, 节点数据或 stat. 如果节点未找到或未显示, 返回`false`. [例子](examples#scroll_to_node2)|
 
 ## walkTreeDataGenerator
 

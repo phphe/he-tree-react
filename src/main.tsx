@@ -24,6 +24,7 @@ const Pages = {
   external_drag: lazy(() => import("./pages/external_drag.tsx")),
   virtual_list: lazy(() => import("./pages/virtual_list.tsx")),
   scroll_to_node: lazy(() => import("./pages/scroll_to_node.tsx")),
+  custom_style: lazy(() => import("./pages/custom_style.tsx")),
 }
 const router = createHashRouter([
   {
@@ -90,6 +91,10 @@ const router = createHashRouter([
         path: '/scroll_to_node',
         element: <Pages.scroll_to_node />
       },
+      {
+        path: '/custom_style',
+        element: <Pages.custom_style />
+      }
     ]
   },
 ]);

@@ -264,3 +264,4 @@ In mobile, user need touch and hold to trigger drag.
 - Option [`customDragImage`](api#customdragimage): custom drag image.
 - Option [`rootId`](api#rootid): the parent id of root nodes in flat data.
 - Option [`keepPlaceholder`](api#keepplaceholder): whether to retain the drag placeholder node when dragging outside the tree. Default is `false`.
+- Function [`scrollToNode`](api#scrolltonode): Scroll to a node.

@@ -61,6 +61,8 @@ The main function of this library. React hook. The arguments are as follows:
   |onDragEnd<a id="ondragend"/>|`(event, stat, isOutside)=>void`|Called on dragend and this drag is started in this tree. `stat` is the stat of the dragged node. `isOutside` indicates whether it ended outside the tree.|
   |onExternalDrop<a id="onexternaldrop"/>|`(event, parentStat, index)=>void`|Called when the external drag ends on this tree. parentStat is the stat of the target parent node, and when it is empty, it represents the root of the tree. Index is the target position, the index of the node among siblings.|
 
+### Return of `useHeTree`
+
 The return of `useHeTree` is an object, including some states and methods. **Note**, this object will change every time. Do not rely on this object, but you can rely on the properties of this object. The properties are as follows:
 | Name | Type | Description |
 | ------------------------- | ------------------------------------------------------ | :-------------------------------------------------------------------------------------------------------------------------------------------|
@@ -76,6 +78,7 @@ The return of `useHeTree` is an object, including some states and methods. **Not
 |visibleIds<a id="visibleids"/>|Array|All visible nodes' id.|
 |attrsList<a id="attrslist"/>|Array|All visible nodes' attrs.|
 |virtualListRef<a id="virtuallistref"/>|`ref`| `ref` of virtual list component, Check [virtual list](https://github.com/phphe/react-base-virtual-list).|
+|scrollToNode<a id="scrolltonode"/>|`(idOrNodeOrStat)=>boolean`|Scroll to node. The argument can be id, node or stat. If node not found or invisible, it return `false`. [Example](examples#scroll_to_node2)|
 
 ## walkTreeDataGenerator
 
