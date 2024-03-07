@@ -491,9 +491,15 @@ export function useHeTree<T extends Record<string, any>>(
           return
         }
         // listen dragend. dragend only trigger in dragstart node
-        const isOutside = !placeholder // placeholder is removed if dragleave the tree
+        let isOutside = !placeholder // placeholder may be removed if dragleave the tree
+        if (!isOutside) {
+          // get isOutside by coordinates
+          const rootEl = rootRef.current as HTMLElement
+          let rect = rootEl.getBoundingClientRect()
+          isOutside = !(e.pageX >= rect.left && e.pageX <= rect.right && e.pageY >= rect.top && e.pageY <= rect.bottom)
+        }
         const customized = props.onDragEnd?.(e, draggingStat!, isOutside) === false
-        if (!customized && !isOutside) {
+        if (!customized && placeholder) {
           let targetIndexInSiblings = placeholder.index
           if (placeholder.parentStat === draggingStat.parentStat && draggingStat.index < targetIndexInSiblings) {
             targetIndexInSiblings--
