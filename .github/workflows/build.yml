@@ -57,7 +57,7 @@ jobs:
           single-commit: true
           branch: gh-pages
           clean: true
-          folder: dist
+          folder: docs/.vitepress/dist
       - name: Remove Dist
         run: rm -rf dist
       - name: Build Library
