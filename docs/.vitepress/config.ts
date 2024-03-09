@@ -1,4 +1,8 @@
 import { defineConfig } from "vitepress";
+import { version } from "../../package.json";
+
+const GTAG_ID = "G-GVYKBNTKPG";
+const vVersion = `v${version}`;
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
@@ -43,6 +47,15 @@ export default defineConfig({
           { text: "Guide", link: "/v1/guide" },
           { text: "Examples", link: "/v1/examples" },
           { text: "API", link: "/v1/api" },
+          {
+            text: vVersion,
+            items: [
+              {
+                text: "Changelog",
+                link: "https://github.com/phphe/he-tree-react/releases",
+              },
+            ],
+          },
         ],
       },
     },
@@ -55,6 +68,15 @@ export default defineConfig({
           { text: "使用", link: "/zh/v1/guide" },
           { text: "例子", link: "/zh/v1/examples" },
           { text: "API", link: "/zh/v1/api" },
+          {
+            text: vVersion,
+            items: [
+              {
+                text: "更新日志",
+                link: "https://github.com/phphe/he-tree-react/releases",
+              },
+            ],
+          },
         ],
       },
     },
@@ -64,7 +86,7 @@ export default defineConfig({
       "script",
       {
         async: "",
-        src: "https://www.googletagmanager.com/gtag/js?id=G-GVYKBNTKPG",
+        src: `https://www.googletagmanager.com/gtag/js?id=${GTAG_ID}`,
       },
     ],
     [
@@ -73,7 +95,7 @@ export default defineConfig({
       `window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-      gtag('config', 'G-GVYKBNTKPG');`,
+      gtag('config', '${GTAG_ID}');`,
     ],
   ],
 });
