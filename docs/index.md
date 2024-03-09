@@ -22,3 +22,15 @@ features:
   - title: Easy to customize
     details: Simple structure, few built-in style, so the style and UI can be easily customized.
 ---
+
+## Features
+
+- Drag with a customizable placeholder.
+- The height of the node is not fixed.
+- Based on HTML Drag and Drop API.
+- Both flat data and tree-shaped data supported.
+- Drag from external.
+- Open or expand. Open node when drag onto it.
+- Checked, semi-checked.
+- Big data, virtual list.
+- Examples for update data.
