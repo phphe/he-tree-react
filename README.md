@@ -9,6 +9,7 @@ React 可拖拽树组件. [文档](https://he-tree-react.phphe.com/zh), [演示]
 ## Features
 
 - Drag with a customizable placeholder.
+- The height of the node is not fixed.
 - Based on HTML Drag and Drop API.
 - Both flat data and tree-shaped data supported.
 - Drag from external.
@@ -16,6 +17,7 @@ React 可拖拽树组件. [文档](https://he-tree-react.phphe.com/zh), [演示]
 - Checked, semi-checked.
 - Big data, virtual list.
 - Examples for update data.
+- rtl, display from right to left.
 
 ## Changelog
 

@@ -34,3 +34,4 @@ features:
 - Checked, semi-checked.
 - Big data, virtual list.
 - Examples for update data.
+- rtl, display from right to left.
