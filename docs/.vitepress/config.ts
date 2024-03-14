@@ -98,4 +98,8 @@ export default defineConfig({
       gtag('config', '${GTAG_ID}');`,
     ],
   ],
+  sitemap: {
+    hostname: "https://he-tree-react.phphe.com",
+  },
+  lastUpdated: true,
 });
