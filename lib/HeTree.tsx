@@ -658,7 +658,7 @@ export function useHeTree<T extends Record<string, any>>(
   const { visibleIds, attrsList, onDragOverRoot, onDropToRoot, onDragEndOnRoot, scrollToNode } = cacheForVisible
   const persistentIndices = useMemo(() => draggingStat ? [visibleIds.indexOf(draggingStat.id)] : [], [draggingStat, visibleIds]);
   // render
-  const renderTree = (options?: { className?: string, style?: React.CSSProperties }): ReactNode => {
+  const renderTree = (options?: { className?: string, style?: React.CSSProperties, listClassName?: string, listInnerClassName?: string }): ReactNode => {
     let renderNodeBox = props.renderNodeBox!
     if (!renderNodeBox) {
       const placeholder = <div className="he-tree-drag-placeholder" style={{ minHeight: '20px', border: '1px dashed blue' }}></div>
@@ -668,7 +668,7 @@ export function useHeTree<T extends Record<string, any>>(
     }
     return (
       <div className={`he-tree ${options?.className || ''}`} style={options?.style} ref={rootRef} onDragOver={onDragOverRoot} onDrop={onDropToRoot} onDragEnd={onDragEndOnRoot}>
-        <VirtualList<Id> ref={virtualListRef} items={visibleIds} virtual={props.virtual} persistentIndices={persistentIndices} style={{ height: '100%' }}
+        <VirtualList<Id> ref={virtualListRef} className={options?.listClassName || ''} innerClassName={options?.listInnerClassName || ''} items={visibleIds} virtual={props.virtual} persistentIndices={persistentIndices} style={{ height: '100%' }}
           renderItem={(id, index) => renderNodeBox({
             stat: getStat(id)!, attrs: attrsList[index], isPlaceholder: id === placeholderId
           })}

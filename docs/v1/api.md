@@ -66,7 +66,7 @@ The main function of this library. React hook. The arguments are as follows:
 The return of `useHeTree` is an object, including some states and methods. **Note**, this object will change every time. Do not rely on this object, but you can rely on the properties of this object. The properties are as follows:
 | Name | Type | Description |
 | ------------------------- | ------------------------------------------------------ | :-------------------------------------------------------------------------------------------------------------------------------------------|
-|renderTree<a id="rendertree"/>|`(options?: { className?: string, style?: React.CSSProperties }): ReactNode`|Tree render. Options can be passed in `className` and `style` to control the style of the root element.|
+|renderTree<a id="rendertree"/>|`(options?: { className?: string, style?: React.CSSProperties, listClassName?: string, listInnerClassName?: string }): ReactNode`|Tree render. Options can be passed in `className` and `style` to control the style of the root element. `listClassName` is for virtual list root element, `listInnerClassName` is for virtual list inner element.|
 |getStat<a id="getstat"/>|`(idOrNodeOrStat)=>stat`|Get stat by id, or node data, or stat object.|
 |allIds<a id="allids"/>|Array|The ids of all nodes.|
 |rootIds<a id="rootids"/>|Array|The ids of all root nodes|
