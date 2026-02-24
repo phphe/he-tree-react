@@ -1,0 +1,2 @@
+- 这个子项目用于开发时查看组件。它基于react@19, vite.
+- This sub-repo is used to view component during development. It is based on react@19, vite.

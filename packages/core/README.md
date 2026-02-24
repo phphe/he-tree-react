@@ -1,0 +1,2 @@
+- 这个子项目存储核心组件，并负责测试和打包。它基于tsup和vitest。
+- This sub-repo stores the core components and is responsible for testing and packaging. It is based on tsup and vitest.

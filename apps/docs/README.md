@@ -1,0 +1,2 @@
+- 这个子项目存储markdown格式文档文件，并把它们转换为网站。它基于vitepress。
+- This sub-repo stores Markdown document files and converts them into website. It is based on VitePress.
