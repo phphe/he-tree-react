@@ -7,12 +7,16 @@
     "lint": "turbo run lint",
     "format": "turbo run format",
     "test": "turbo run test",
-    "clean": "turbo run clean"
+    "clean": "turbo run clean",
+    "change": "changeset",
+    "version": "changeset version",
+    "release": "turbo run build && changeset publish"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.0",
     "@types/node": "^25.3.0",
-    "turbo": "^2.3.0"
+    "turbo": "^2.3.0",
+    "@changesets/cli": "^2.29.8"
   },
   "packageManager": "pnpm@10.30.2",
   "engines": {

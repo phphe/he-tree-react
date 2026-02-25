@@ -1,0 +1,10 @@
+{
+  "mode": "pre",
+  "tag": "beta",
+  "initialVersions": {
+    "dev": "0.1.0",
+    "docs": "0.1.0",
+    "he-tree-react": "1.2.0"
+  },
+  "changesets": []
+}
