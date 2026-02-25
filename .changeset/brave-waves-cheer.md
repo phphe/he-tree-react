@@ -1,5 +1,5 @@
 ---
-"he-tree-react": major
+"he-tree-react": minor
 ---
 
 feat: support react19
