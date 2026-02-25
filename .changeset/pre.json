@@ -6,5 +6,8 @@
     "docs": "0.1.0",
     "he-tree-react": "1.2.0"
   },
-  "changesets": []
+  "changesets": [
+    "brave-waves-cheer",
+    "soft-clocks-melt"
+  ]
 }
