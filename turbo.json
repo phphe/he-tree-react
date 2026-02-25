@@ -15,12 +15,6 @@
       "cache": false,
       "persistent": true
     },
-    "release": {
-      "cache": false,
-      "dependsOn": [
-        "build"
-      ]
-    },
     "lint": {
       "dependsOn": [
         "^build"

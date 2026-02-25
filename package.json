@@ -10,7 +10,7 @@
     "clean": "turbo run clean",
     "change": "changeset",
     "version": "changeset version",
-    "release": "turbo run release --filter=he-tree-react..."
+    "release": "turbo build --filter=he-tree-react... && changeset publish"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.0",

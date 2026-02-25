@@ -28,7 +28,6 @@
     "dev": "tsup --watch",
     "test": "vitest run",
     "test:watch": "vitest",
-    "release": "changeset publish",
     "lint": "biome check .",
     "format": "biome format --write .",
     "clean": "rm -rf dist"
