@@ -1,0 +1,72 @@
+name: Publish Package & Docs
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write # 用于 Changesets 创建 PR
+  id-token: write
+  pages: write # 必须：部署 Pages 需要
+  deployments: write
+
+concurrency: ${{ github.workflow }}-${{ github.ref }} # 避免重复发布，旧的action运行完成后才会执行新的
+
+jobs:
+  # 任务 1：发布到 npm
+  release:
+    name: Release & Publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 必须获取完整历史，Changesets 才能计算变更
+      - uses: pnpm/action-setup@v3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: "pnpm"
+          registry-url: "https://registry.npmjs.org"
+      - run: pnpm install --frozen-lockfile
+      - name: Create Release PR or Publish
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          publish: pnpm release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # for write repo
+
+  # 任务 2：部署文档到 GitHub Pages
+  deploy-docs:
+    name: Deploy Documentation
+    needs: release # 等待发布任务完成，确保文档是最新的
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+      - name: Build Docs
+        run: pnpm build
+
+      - name: Move Files
+        run: |
+          # cp demo to docs
+          cp -r apps/dev/dist apps/docs/.vitepress/dist/v1-demo-windowed
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "./apps/docs/.vitepress/dist"
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
