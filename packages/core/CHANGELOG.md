@@ -1,5 +1,11 @@
 # he-tree-react
 
+## 1.2.1-beta.1
+
+### Patch Changes
+
+- f2be42d: chore: reset version
+
 ## 1.2.1-beta.0
 
 ### Patch Changes
