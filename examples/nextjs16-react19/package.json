@@ -1,0 +1,28 @@
+{
+  "name": "nextjs16-react19",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "install-dep": "pnpm --ignore-workspace install",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "next": "16.1.6",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "he-tree-react": "^1.2.1-beta.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "^5"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "sharp"
+    ]
+  }
+}
