@@ -7,7 +7,7 @@ on:
 permissions:
   contents: write
   pull-requests: write # 用于 Changesets 创建 PR
-  id-token: write
+  id-token: write # 必须
   pages: write # 必须：部署 Pages 需要
   deployments: write
 
