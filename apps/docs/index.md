@@ -35,3 +35,4 @@ features:
 - Big data, virtual list.
 - Examples for update data.
 - rtl, display from right to left.
+- MIT license.

@@ -2,9 +2,9 @@
 
 # he-tree-react ![GitHub License](https://img.shields.io/github/license/phphe/he-tree-react) ![NPM Version](https://img.shields.io/npm/v/he-tree-react) ![NPM Type Definitions](https://img.shields.io/npm/types/he-tree-react) ![npm bundle size](https://img.shields.io/bundlephobia/minzip/he-tree-react)
 
-React draggable sortable tree component. [Document](https://he-tree-react.phphe.com), [demo](https://he-tree-react.phphe.com/v1/examples).
+React draggable sortable tree component. Support React 18, 19. [Document](https://he-tree-react.phphe.com) | [Demo](https://he-tree-react.phphe.com/v1/examples) | [Changelog](./CHANGELOG.md)
 
-React 可拖拽树组件. [文档](https://he-tree-react.phphe.com/zh), [演示](https://he-tree-react.phphe.com/zh/v1/examples).
+React 可拖拽树组件. 支持React 18, 19. [文档](https://he-tree-react.phphe.com/zh) | [演示](https://he-tree-react.phphe.com/zh/v1/examples) | [更新记录](./CHANGELOG.md)
 
 ## Features
 
@@ -18,7 +18,4 @@ React 可拖拽树组件. [文档](https://he-tree-react.phphe.com/zh), [演示]
 - Big data, virtual list.
 - Examples for update data.
 - rtl, display from right to left.
-
-## Changelog
-
-https://github.com/phphe/he-tree-react/releases
+- MIT license. MIT开源许可。
