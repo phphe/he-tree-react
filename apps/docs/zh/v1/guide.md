@@ -174,7 +174,7 @@ renderNodeBox: ({ stat, attrs, isPlaceholder }) => (
 
 - [`canDrag`](api#candrag), 节点是否可拖拽.
 - [`canDrop`](api#candrop), 节点是否可放入.
-- [`canDropToRoot`](api#candroptoroot), 树根是否可放入.
+- [`canDropToRoot`](api#candroptoroot), 树最外层是否可放入.
 
 <<< @/../dev/src/pages/draggable_droppable.tsx{16-18}
 <DemoIframe url="/draggable_droppable" />

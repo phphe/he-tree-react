@@ -54,6 +54,7 @@ The main function of this library. React hook. The arguments are as follows:
   | onChange<a id="onchange"/>| `(newData)=>void`|Callback on data change|
   | canDrag<a id="candrag"/> | `(stat)=>boolean, null, undefined, void` | Whether a node draggable. Returning `null, undefined, void` means inheriting the parent node. |
   | canDrop<a id="candrop"/> | `(stat, index)=>boolean, null, undefined, void` | Whether a node droppable. Returning `null, undefined, void` means inheriting the parent node. The parameter `index` may be empty. If it is not empty, it indicates the position. |
+  | canDropToRoot<a id="candroptoroot"/> | `(index)=>boolean` | whether the tree root can be dropped. The parameter `index` indicates the position. |
   | customDragImage<a id="customdragimage"/> | `(event, stat)=> void` | Called `event.dataTransfer.setDragImage` to custom drag image. [Reference](https://developer.mozilla.org/en-US/docs/Web/API/DataTransfer/setDragImage). |
   |onDragStart<a id="ondragstart"/>| `(event, stat)=> void` ||
   |onExternalDragOver<a id="onexternaldragover"/>|`(event)=>boolean`|Called when drag from external. Must return a Boolean value to indicate whether to handle this drag.|
@@ -103,7 +104,7 @@ walkTreeDataGenerator(
   (node, { parent, parents, siblings, index, skipChildren, exitWalk }) => {
     // ...
   },
-  "children"
+  "children",
 );
 ```
 
@@ -117,7 +118,7 @@ let foundNode = findTreeData(
   (node, { parent, parents, siblings, index, skipChildren, exitWalk }) => {
     // return node.id === 1;
   },
-  "children"
+  "children",
 );
 ```
 
@@ -131,7 +132,7 @@ let nodes = filterTreeData(
   (node, { parent, parents, siblings, index, skipChildren, exitWalk }) => {
     // return node.id > 1;
   },
-  "children"
+  "children",
 );
 ```
 
@@ -200,14 +201,14 @@ walkFlatData(
   flatData,
   (
     node,
-    { parent, parents, index, treeIndex, id, pid, skipChildren, exitWalk }
+    { parent, parents, index, treeIndex, id, pid, skipChildren, exitWalk },
   ) => {
     // ...
   },
   {
     idKey: "id",
     parentIdKey: "parent_id",
-  }
+  },
 );
 ```
 

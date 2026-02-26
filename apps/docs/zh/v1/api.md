@@ -54,6 +54,7 @@ const {/* return */} = useHeTree({/* options */}) // prettier-ignore
   | onChange<a id="onchange"/>| `(newData)=>void`|数据发生改变时调用.|
   | canDrag<a id="candrag"/> | `(stat)=>boolean, null, undefined, void` | 节点是否可拖拽. 返回`null, undefined, void`表示继承父节点. |
   | canDrop<a id="candrop"/> | `(stat, index)=>boolean, null, undefined, void` | 节点是否可放入. 返回`null, undefined, void`表示继承父节点. 参数`index`可能为空, 不为空时表示将要放入节点的子级的位置. |
+  | canDropToRoot<a id="candroptoroot"/> | `(index)=>boolean` | 树最外层是否可放入. 参数`index`表示要放入的位置. |
   | customDragImage<a id="customdragimage"/> | `(event, stat)=> void` | 调用`event.dataTransfer.setDragImage`自定义 drag image. [参考](https://developer.mozilla.org/en-US/docs/Web/API/DataTransfer/setDragImage). |
   |onDragStart<a id="ondragstart"/>| `(event, stat)=> void` |当拖拽开始时|
   |onExternalDragOver<a id="onexternaldragover"/>|`(event)=>boolean`|当拖拽来自外部时调用. 你必选返回布尔值表示是否处理此拖拽.|
@@ -103,7 +104,7 @@ walkTreeDataGenerator(
   (node, { parent, parents, siblings, index, skipChildren, exitWalk }) => {
     // ...
   },
-  "children"
+  "children",
 );
 ```
 
@@ -117,7 +118,7 @@ let foundNode = findTreeData(
   (node, { parent, parents, siblings, index, skipChildren, exitWalk }) => {
     // return node.id === 1;
   },
-  "children"
+  "children",
 );
 ```
 
@@ -131,7 +132,7 @@ let nodes = filterTreeData(
   (node, { parent, parents, siblings, index, skipChildren, exitWalk }) => {
     // return node.id > 1;
   },
-  "children"
+  "children",
 );
 ```
 
@@ -200,14 +201,14 @@ walkFlatData(
   flatData,
   (
     node,
-    { parent, parents, index, treeIndex, id, pid, skipChildren, exitWalk }
+    { parent, parents, index, treeIndex, id, pid, skipChildren, exitWalk },
   ) => {
     // ...
   },
   {
     idKey: "id",
     parentIdKey: "parent_id",
-  }
+  },
 );
 ```
 
