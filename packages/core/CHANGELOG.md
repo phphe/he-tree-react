@@ -1,5 +1,11 @@
 # he-tree-react
 
+## 1.3.1
+
+### Patch Changes
+
+- 9b6e1dd: docs: add a gif demo
+
 ## 1.3.0
 
 ### Minor Changes

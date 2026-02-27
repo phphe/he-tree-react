@@ -1,6 +1,6 @@
 {
   "name": "he-tree-react",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "author": "phphe <phphe@outlook.com> (https://github.com/phphe)",
   "description": "React draggable sortable tree component.",
   "keywords": [
