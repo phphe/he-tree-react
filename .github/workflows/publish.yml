@@ -47,6 +47,8 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          lfs: true # 必须，如果使用了 LFS
       - uses: pnpm/action-setup@v3
       - uses: actions/setup-node@v4
         with:
