@@ -9,7 +9,7 @@
     "start": "next start"
   },
   "dependencies": {
-    "next": "16.1.6",
+    "next": "16.1.7",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "he-tree-react": "^1.2.1-beta.0"
